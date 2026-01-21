@@ -1,4 +1,4 @@
-package com.milktimeplant
+package com.milkbook
 
 import android.app.Application
 import com.facebook.react.PackageList
