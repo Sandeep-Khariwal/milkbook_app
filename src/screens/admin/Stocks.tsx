@@ -1,7 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
   Modal,
   StyleSheet,
   Text,
@@ -10,32 +8,23 @@ import {
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import MaIcon from 'react-native-vector-icons/MaterialIcons';
 import { BASE_URL, getToken } from '../../../token/tokenStorage';
 import { useSelector } from 'react-redux';
-import BottomSheet, {
-  BottomSheetScrollView,
-  BottomSheetView,
-} from '@gorhom/bottom-sheet';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  ALERT_TYPE,
-  Dialog,
-  AlertNotificationRoot,
-  Toast,
-} from 'react-native-alert-notification';
+import BottomSheet from '@gorhom/bottom-sheet';
+import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import { useNavigation } from '@react-navigation/native';
 import { SelectList } from 'react-native-dropdown-select-list';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
+import DatePicker from 'react-native-date-picker';
 
 const Stocks = () => {
   const firm = useSelector((state: any) => state.firm.value);
   const navigation = useNavigation<any>();
-  const user = useSelector((state: any) => state.customer.value);
-  console.log('user : ', user.id, firm.id);
   const [stockName, setStockName] = useState<string>('');
   const [stockQuantity, setStockQuantity] = useState<string>('');
   const [stockPrice, setStockPrice] = useState<string>('');
+  const [open, setOpen] = useState<boolean>(false);
+  const [saleDate, setSaleDate] = useState<Date>(new Date());
   // ref
   const bottomSheetRef = useRef<BottomSheet>(null);
   const bottomSheetRefDelete = useRef<BottomSheet>(null);
@@ -65,14 +54,6 @@ const Stocks = () => {
   }>({ item: '', quantity: 0, _id: '', price: 0 });
 
   const [isEditStock, setIsEditStock] = useState<boolean>(false);
-
-  // callbacks
-  // const handleSheetChanges = useCallback((index: number) => {
-  //   setBottomSheetIndex(index);
-  // }, []);
-  // const handleSheetChangesDelete = useCallback((index: number) => {
-  //   setBottomSheetDeleteIndex(index);
-  // }, []);
 
   useEffect(() => {
     const getStocks = async () => {
@@ -154,7 +135,6 @@ const Stocks = () => {
     })
       .then(async (res: any) => {
         const { stocks } = await res.json();
-        // console.log('stocks data : ', data);
 
         setStocks(stocks);
         setIsLoading(false);
@@ -169,14 +149,10 @@ const Stocks = () => {
     bottomSheetRefDelete.current?.close();
   };
   if (isLoading) {
-    return (
-      <LoadingOverlay visible={isLoading} />
-    );
+    return <LoadingOverlay visible={isLoading} />;
   }
 
   const saleProduct = async () => {
-    console.log('selected : ', selected, selectedQuantity);
-
     if (!selected || !selectedQuantity) {
       Toast.show({
         type: ALERT_TYPE.WARNING,
@@ -190,9 +166,6 @@ const Stocks = () => {
     const productName = stocks.find((stk: any) => stk._id === selected)?.item;
     const rate = stocks.find((stk: any) => stk._id === selected)?.price;
 
-
-    console.log("Number(selectedQuantity) : ",Number(selectedQuantity));
-    
     await fetch(`${BASE_URL}/history/create`, {
       method: 'POST',
       headers: {
@@ -204,7 +177,8 @@ const Stocks = () => {
         productName: productName,
         amount: Number(selectedQuantity) * Number(rate),
         quantity: Number(selectedQuantity),
-        stockId:selected
+        stockId: selected,
+        date: saleDate,
       }),
     })
       .then(async (res: any) => {
@@ -212,13 +186,15 @@ const Stocks = () => {
         setIsLoading(false);
         setSelected('');
         setSelectedQuantity('');
-        setStocks((prev:any)=>(prev.map((stk:any)=>{
-                  if(stk._id === selected){
-            stk.quantity = stk.quantity - Number(selectedQuantity)
-            return stk
-          }
-          return stk
-        })))
+        setStocks((prev: any) =>
+          prev.map((stk: any) => {
+            if (stk._id === selected) {
+              stk.quantity = stk.quantity - Number(selectedQuantity);
+              return stk;
+            }
+            return stk;
+          }),
+        );
         Toast.show({
           type: ALERT_TYPE.SUCCESS,
           title: 'Success',
@@ -251,7 +227,7 @@ const Stocks = () => {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.button, { width: '30%' }]}
-          onPress={() => navigation.navigate('History',{firmId:firm.id})}
+          onPress={() => navigation.navigate('History', { firmId: firm.id })}
         >
           <Text style={styles.text}>History</Text>
         </TouchableOpacity>
@@ -330,10 +306,7 @@ const Stocks = () => {
         animationType="fade"
         transparent={true}
         visible={bottomSheetIndex}
-        onRequestClose={() => {
-          // Alert.alert('Modal has been closed.');
-          // setModalVisible(!modalVisible);
-        }}
+        onRequestClose={() => {}}
         style={{
           flex: 1,
           display: 'flex',
@@ -447,16 +420,6 @@ const Stocks = () => {
       >
         <View style={styles.centeredView}>
           <View style={[styles.modalView, { padding: 20 }]}>
-            {/* <View style={{ width: '100%', alignSelf: 'flex-end', padding: 10 }}>
-              <Icon
-                name="x"
-                size={26}
-                color="#333"
-                onPress={() => {
-                  setBottomSheetIndex(false);
-                }}
-              />
-            </View> */}
             <View>
               <Text
                 style={{
@@ -491,10 +454,7 @@ const Stocks = () => {
         animationType="fade"
         transparent={true}
         visible={showSaleModal}
-        onRequestClose={() => {
-          // Alert.alert('Modal has been closed.');
-          // setModalVisible(!modalVisible);
-        }}
+        onRequestClose={() => {}}
         style={{
           flex: 1,
           display: 'flex',
@@ -519,7 +479,7 @@ const Stocks = () => {
             </View>
             <View
               style={{
-                width: '90%',
+                width: '100%',
                 padding: 10,
                 display: 'flex',
                 flexDirection: 'row',
@@ -529,22 +489,36 @@ const Stocks = () => {
               }}
             >
               <View style={{ width: '50%' }}>
-                <SelectList
-                  setSelected={(val: any) => {
-                    setSelected(val);
-                  }}
-                  data={stocks.map((stk: any) => ({
-                    key: stk._id,
-                    value: stk.item,
-                  }))}
-                  save="key"
-                  dropdownStyles={{
-                    maxHeight: 150,
-                    minWidth: '50%',
-                    // maxWidth: '40%',
-                  }}
-                  // defaultOption={}
-                />
+                <View style={{ zIndex: 1000 }}>
+                  <SelectList
+                    setSelected={(val: string) => setSelected(val)}
+                    data={stocks.map((stk: any) => ({
+                      key: stk._id,
+                      value: stk.item,
+                    }))}
+                    save="key"
+                    boxStyles={{
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: '#5086E7',
+                      backgroundColor: '#fff',
+                      height: 42,
+                    }}
+                    dropdownStyles={{
+                      width: '100%',
+                      maxHeight: 100,
+                      backgroundColor: '#fff',
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: '#5086E7',
+                      elevation: 6,
+                    }}
+                    dropdownItemStyles={{
+                      paddingVertical: 10,
+                      paddingHorizontal: 12,
+                    }}
+                  />
+                </View>
               </View>
               <View style={styles.inputBox}>
                 <TextInput
@@ -558,12 +532,120 @@ const Stocks = () => {
                   placeholder="Quantity"
                 />
               </View>
-              <MaIcon
-                name="add-circle-outline"
-                size={34}
-                color="#5086E7"
-                onPress={saleProduct}
-              />
+            </View>
+            <View style={[styles.stockContainer, { height: 50 }]}>
+              <TouchableOpacity
+                style={styles.inputBox}
+                onPress={() => setOpen(true)}
+              >
+                <View>
+                  <TextInput
+                    editable={false}
+                    value={saleDate.toDateString()}
+                    onChangeText={() => {}} // ❌ ignores input
+                    style={styles.textInput}
+                    placeholder="sale Date"
+                  />
+                  <Modal visible={open} transparent animationType="fade">
+                    <View
+                      style={{
+                        flex: 1,
+                        backgroundColor: 'rgba(0,0,0,0.4)',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <View
+                        style={{
+                          backgroundColor: '#fff',
+                          borderRadius: 12,
+                          padding: 16,
+                          width: '90%',
+                        }}
+                      >
+                        <DatePicker
+                          date={saleDate}
+                          onDateChange={setSaleDate}
+                          mode="datetime"
+                        />
+
+                        {/* Buttons */}
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            justifyContent: 'space-around',
+                            marginTop: 12,
+                          }}
+                        >
+                          <TouchableOpacity
+                            onPress={() => setOpen(false)}
+                            style={{
+                              paddingVertical: 10,
+                              paddingHorizontal: 16,
+                              marginRight: 10,
+                              borderWidth: 1,
+                              borderColor: '#5086E7',
+                              width: '30%',
+                              borderRadius: 10,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: '#999',
+                                fontWeight: '600',
+                                textAlign: 'center',
+                              }}
+                            >
+                              Cancel
+                            </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            onPress={() => setOpen(false)}
+                            style={{
+                              paddingVertical: 10,
+                              paddingHorizontal: 16,
+                              backgroundColor: '#5086E7',
+                              width: '30%',
+                              borderRadius: 10,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: '#fff',
+                                fontWeight: '600',
+                                textAlign: 'center',
+                              }}
+                            >
+                              Done
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </View>
+                  </Modal>
+                </View>
+              </TouchableOpacity>
+              <View
+                style={[
+                  styles.inputBox,
+                  {
+                    backgroundColor: '#5086E7',
+                    width: '45%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  },
+                ]}
+              >
+                <TouchableOpacity onPress={saleProduct}>
+                  <Text
+                    style={{ fontSize: 16, color: '#fff', fontWeight: 700 }}
+                  >
+                    Sale
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </View>
@@ -615,8 +697,6 @@ const styles = StyleSheet.create({
   contentContainer: {
     height: 200,
     padding: 36,
-    // alignItems: 'center',
-    // paddingBottom:50
   },
   ButtonBox: {
     display: 'flex',

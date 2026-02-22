@@ -1,20 +1,15 @@
-import { useState } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useDispatch, useSelector } from "react-redux";
-import { deleteToken } from "../../../token/tokenStorage";
-import { setFirmDetails } from "../../../redux/slices/firmSlice";
-import Farmers from "../admin/Farmer";
-
+import { useState } from 'react';
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useDispatch } from 'react-redux';
+import { deleteToken } from '../../../token/tokenStorage';
+import { setFirmDetails } from '../../../redux/slices/firmSlice';
+import Farmers from '../admin/Farmer';
 
 const AllFarmers = () => {
-  const distributer = useSelector((state: any) => state.distributer.value);
-  const firm = useSelector((state: any) => state.firm.value);
-  console.log('distributer : ', distributer);
   const [showLogout, setShowLogout] = useState<boolean>(false);
   const dispatch = useDispatch();
 
   const Logout = async () => {
-    // bottomSheetRef.current?.close();
     await deleteToken();
     const firmData = {
       name: '',
@@ -22,43 +17,17 @@ const AllFarmers = () => {
       role: '',
     };
     dispatch(setFirmDetails(firmData));
-    // navigation.navigate("auth")
   };
 
   return (
     <View style={{ flex: 1 }}>
-      {/* <View style={{width:"100%",padding:10, display:"flex",flexDirection:"row",alignItems:"center",gap:10}} >
-        <View style={styles.inputBox}>
-          <TextInput
-            editable
-            multiline
-            numberOfLines={4}
-            maxLength={40}
-            onChangeText={text => setQuery(text)}
-            //  value={customer.name}
-            style={styles.textInput}
-            placeholder="Name"
-          />
-        </View>
-                  <FaIcon
-                      name="search"
-                      size={30}
-                      // color={earnings < 0 ? '#713333ff' : '#3b613cff'}
-                      onPress={() => {
-                        // navigation.goBack();
-                      }}
-                    />
-      </View> */}
       <Farmers />
 
       <Modal
         animationType="fade"
         transparent={true}
         visible={showLogout}
-        onRequestClose={() => {
-          // Alert.alert('Modal has been closed.');
-          // setModalVisible(!modalVisible);
-        }}
+        onRequestClose={() => {}}
         style={{
           flex: 1,
           display: 'flex',
@@ -99,8 +68,7 @@ const AllFarmers = () => {
   );
 };
 
-export default AllFarmers
-
+export default AllFarmers;
 
 const styles = StyleSheet.create({
   heroContainer: {
@@ -109,7 +77,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 28,
     borderBottomLeftRadius: 28,
     display: 'flex',
-    // flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-evenly',
     backgroundColor: '#5086E7',

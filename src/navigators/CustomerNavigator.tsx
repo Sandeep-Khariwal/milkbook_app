@@ -1,20 +1,21 @@
-import React, { Component } from 'react'
-import { Text, View } from 'react-native'
+import React from 'react'
+import { View } from 'react-native'
 import { useSelector } from 'react-redux';
 import CustomerHome from '../screens/customers/CustomerHome';
 import { createStackNavigator } from '@react-navigation/stack';
 import ShowHistory from '../screens/commonScreen/ShowHistory';
+import ShowAllHistory from '../screens/commonScreen/AllHistory';
 
 
 const Stack = createStackNavigator();
 
 export  function CustomerPage(){
     const customer = useSelector((state: any) => state.customer.value);
-    console.log("customer : ",customer);
 
     const route = {
       params:{
         id:customer.id,
+        userType:"customer"
       }
     }
     
@@ -35,6 +36,10 @@ export default function CustomerNavigator() {
     >
       <Stack.Screen name="Customer" component={CustomerPage} />
        <Stack.Screen name="History" component={ShowHistory} />
+             <Stack.Screen
+        name="AllHistory"
+        component={ShowAllHistory}
+      />
     </Stack.Navigator>
   );
 }

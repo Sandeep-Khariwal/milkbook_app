@@ -1,7 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
   Modal,
   StyleSheet,
   Text,
@@ -10,15 +8,14 @@ import {
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import { BASE_URL, getToken } from '../../../token/tokenStorage';
+import { BASE_URL } from '../../../token/tokenStorage';
 import { useSelector } from 'react-redux';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import BottomSheet from '@gorhom/bottom-sheet';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
+import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 
 const Distributers = () => {
   const firm = useSelector((state: any) => state.firm.value);
-    const isDistributer = firm.role === 'distributer';
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [distributer, setDistributer] = useState<{
     name: string;
@@ -38,7 +35,6 @@ const Distributers = () => {
     }[]
   >([]);
 
-  const bottomSheetRef = useRef<BottomSheet>(null);
   const bottomSheetRefDelete = useRef<BottomSheet>(null);
   const [bottomSheetIndex, setBottomSheetIndex] = useState<boolean>(false);
   const [bottomSheetDeleteIndex, setBottomSheetDeleteIndex] =
@@ -51,17 +47,6 @@ const Distributers = () => {
   }>({ name: '', phoneNumber: '', _id: '' });
 
   const [isEditDistributer, setIsEditDistributer] = useState<boolean>(false);
-
-  // const handleSheetChanges = useCallback((index: number) => {
-  //   if (index === -1) {
-  //     setIsEditDistributer(false);
-  //   }
-  //   setBottomSheetIndex(index);
-  // }, []);
-
-  // const handleSheetChangesDelete = useCallback((index: number) => {
-  //   setBottomSheetDeleteIndex(index);
-  // }, []);
 
   useEffect(() => {
     getDistributers();
@@ -76,8 +61,6 @@ const Distributers = () => {
     })
       .then(async (res: any) => {
         const { users } = await res.json();
-        console.log("users in dist : ", users);
-        
         const filterdUsers = users.filter(
           (d: any) => d.userType === 'distributer',
         );
@@ -92,7 +75,6 @@ const Distributers = () => {
 
   const CreateDistributer = async () => {
     if (distributer.phoneNumber.length < 10) {
-      console.log('enter valid phone number');
       return;
     }
     if (
@@ -115,21 +97,35 @@ const Distributers = () => {
       }),
     })
       .then(async (res: any) => {
-        getDistributers();
+        const { user, status } = await res.json();
+        if (status === 401) {
+          setIsLoading(false);
+          setDistributer({
+            name: '',
+            phoneNumber: '',
+            password: '',
+          });
+          Toast.show({
+            type: ALERT_TYPE.DANGER,
+            title: 'Error',
+            textBody: `Distributer Already Exist!!`,
+          });
 
-        const {user} = await res.json();
-        console.log("user : ",user);
-        
+          return;
+        }
 
-        const newUser = {
-          name: user.name,
-          phoneNumber: user.phoneNumber,
-          _id: user._id,
-        };
         if (isEditDistributer) {
-          getDistributers();
+          Toast.show({
+            type: ALERT_TYPE.SUCCESS,
+            title: 'Success',
+            textBody: `${distributer.name} Distributer updated!!`,
+          });
         } else {
-          setAllDistributers(prev => [...prev, newUser]);
+          Toast.show({
+            type: ALERT_TYPE.SUCCESS,
+            title: 'Success',
+            textBody: `${distributer.name} Distributer created!!`,
+          });
         }
         setIsLoading(false);
         setDistributer({
@@ -137,6 +133,7 @@ const Distributers = () => {
           phoneNumber: '',
           password: '',
         });
+        getDistributers();
       })
       .catch((e: any) => {
         console.log(e);
@@ -145,7 +142,6 @@ const Distributers = () => {
 
     setBottomSheetIndex(false);
     setIsEditDistributer(false);
-    // bottomSheetRef.current?.close();
   };
 
   const DeleteDistributer = async () => {
@@ -174,16 +170,14 @@ const Distributers = () => {
   };
 
   if (isLoading) {
-    return (
-      <LoadingOverlay visible={isLoading} />
-    );
+    return <LoadingOverlay visible={isLoading} />;
   }
   return (
     <View style={styles.container}>
       <View style={styles.stocksContainer}>
         {allDistributers.length > 0 ? (
-          allDistributers.map((distributer: any) => (
-            <View key={distributer._id} style={styles.cardContainer}>
+          allDistributers.map((distributer: any, i: number) => (
+            <View key={distributer._id ?? i} style={styles.cardContainer}>
               <View style={styles.cardOne}>
                 <Text
                   style={{ fontSize: 18, fontWeight: 600, color: '#5086E7' }}
@@ -244,10 +238,7 @@ const Distributers = () => {
         animationType="fade"
         transparent={true}
         visible={bottomSheetIndex}
-        onRequestClose={() => {
-          // Alert.alert('Modal has been closed.');
-          // setModalVisible(!modalVisible);
-        }}
+        onRequestClose={() => {}}
         style={{
           flex: 1,
           display: 'flex',
@@ -342,10 +333,7 @@ const Distributers = () => {
         animationType="fade"
         transparent={true}
         visible={bottomSheetDeleteIndex}
-        onRequestClose={() => {
-          // Alert.alert('Modal has been closed.');
-          // setModalVisible(!modalVisible);
-        }}
+        onRequestClose={() => {}}
         style={{
           flex: 1,
           display: 'flex',
@@ -433,7 +421,6 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   contentContainer: {
-    // flex: 1,
     height: 300,
     padding: 20,
     alignItems: 'center',
@@ -443,7 +430,6 @@ const styles = StyleSheet.create({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    // marginTop: 30,
     margin: 10,
     position: 'absolute',
     top: '85%',

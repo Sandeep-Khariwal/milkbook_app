@@ -16,13 +16,17 @@ import { useSelector } from 'react-redux';
 import { formatDate } from '../../../utility/helperFunctions';
 import FeIcon from 'react-native-vector-icons/Feather';
 
-const ShowHistory = ({ route }: { route: any }) => {
-  const firm = useSelector((state: any) => state.firm.value);
+const ShowAllHistory = ({ route }: { route: any }) => {
   const customerId = route.params.customerId;
   const firmId = route.params.firmId;
   const userType = route.params.userType;
+  const isFarmer = userType === 'farmer';
   const navigation = useNavigation<any>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const firm = useSelector((state: any) => state.firm.value);
+  const [stockCountMap, setStockCountMap] = useState<Map<string, number>>(
+    new Map(),
+  );
 
   const [stocks, setStocks] = useState<
     {
@@ -32,10 +36,7 @@ const ShowHistory = ({ route }: { route: any }) => {
       _id: string;
     }[]
   >([]);
-  const [selectedStock, setSelectedStock] = useState<string>('all');
-  const [stockCountMap, setStockCountMap] = useState<Map<string, number>>(
-    new Map(),
-  );
+  const [selectedStock, setSelectedStock] = useState<string>('');
 
   useEffect(() => {
     const getStocks = async () => {
@@ -49,7 +50,6 @@ const ShowHistory = ({ route }: { route: any }) => {
         .then(async (res: any) => {
           const { stocks } = await res.json();
           setStocks(stocks);
-
           setIsLoading(false);
         })
         .catch((e: any) => {
@@ -63,7 +63,7 @@ const ShowHistory = ({ route }: { route: any }) => {
   const [allHistory, setAllHistory] = useState<
     {
       _id: string;
-      user: { _id: string; name: string };
+      user: { name: string };
       firm: string;
       productName: string;
       description: string;
@@ -76,7 +76,7 @@ const ShowHistory = ({ route }: { route: any }) => {
   const [showHistory, setShowHistory] = useState<
     {
       _id: string;
-      user: { _id: string; name: string };
+      user: { name: string };
       firm: string;
       productName: string;
       description: string;
@@ -85,7 +85,6 @@ const ShowHistory = ({ route }: { route: any }) => {
       date: string;
     }[]
   >([]);
-
   const [selectedHistory, setSelectedHistory] = useState<{
     _id: string;
     user: { _id: string; name: string };
@@ -134,11 +133,9 @@ const ShowHistory = ({ route }: { route: any }) => {
     try {
       const res = await fetch(`${BASE_URL}/history/all/${id}`);
       const { data } = await res.json();
-
       setAllHistory(data);
       setShowHistory(data);
       setIsLoading(false);
-
       const newMap = new Map();
 
       data.forEach((stk: any) => {
@@ -155,9 +152,8 @@ const ShowHistory = ({ route }: { route: any }) => {
   };
   const getUserHistory = async (id: string) => {
     try {
-      const res = await fetch(`${BASE_URL}/history/user/${id}`);
+      const res = await fetch(`${BASE_URL}/history/user/all/${id}`);
       const { data } = await res.json();
-
       setAllHistory(data);
       setShowHistory(data);
 
@@ -177,95 +173,78 @@ const ShowHistory = ({ route }: { route: any }) => {
     }
   };
 
-  const SeeAllHistory = () => {
-    let payload;
-    if (firmId) {
-      payload = {
-        firmId: firmId,
-        userType: userType,
-      };
-    } else {
-      payload = {
-        customerId: customerId,
-        userType: userType,
-      };
-    }
-    navigation.navigate('AllHistory', payload);
-  };
-
-  const deleteHistory = async (history: any) => {
-    try {
-      const payload = {
-        userId: customerId,
-        amount: history.amount,
-        userType: userType,
-      };
-
-      const res = await fetch(`${BASE_URL}/history/delete/${history._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-
-      if (firmId) {
-        getAllHistory(firmId);
-        setIsLoading(true);
-      }
-      if (customerId) {
-        getUserHistory(customerId);
-        setIsLoading(true);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
-  const editHistory = async () => {
-    try {
-      const foundSigleHist = showHistory.find(
-        (hist: any) => hist.productName === selectedHistory.productName,
-      );
-
-      const rate =
-        Number(foundSigleHist.amount) / Number(foundSigleHist.quantity);
-
-      const payload = {
-        userId: customerId,
-        amount: rate * selectedHistory.quantity,
-        quantity: selectedHistory.quantity,
-      };
-
-      await fetch(`${BASE_URL}/history/update/${selectedHistory._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      })
-        .then(async (res: any) => {
-          const data = await res.json();
-          setIsEditHistory(false);
-          if (firmId) {
-            getAllHistory(firmId);
-            setIsLoading(true);
-          }
-          if (customerId) {
-            getUserHistory(customerId);
-            setIsLoading(true);
-          }
-        })
-        .catch((e: any) => {
-          console.log(e);
+    const deleteHistory = async (history: any) => {
+      try {
+        const payload = {
+          userId: customerId,
+          amount: history.amount,
+          userType: userType,
+        };
+        const res = await fetch(`${BASE_URL}/history/delete/${history._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
         });
-
-      setIsEditHistory(false);
-    } catch (e) {
-      console.log(e);
-    }
-  };
+        const data = await res.json();
+  
+        if (firmId) {
+          getAllHistory(firmId);
+          setIsLoading(true);
+        }
+        if (customerId) {
+          getUserHistory(customerId);
+          setIsLoading(true);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    };
+  
+    const editHistory = async () => {
+      try {
+        const foundSigleHist = showHistory.find(
+          (hist: any) => hist.productName === selectedHistory.productName,
+        );
+  
+        const rate =
+          Number(foundSigleHist.amount) / Number(foundSigleHist.quantity);
+  
+        const payload = {
+          userId: customerId,
+          amount: rate * selectedHistory.quantity,
+          quantity: selectedHistory.quantity,
+        };
+  
+        await fetch(`${BASE_URL}/history/update/${selectedHistory._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        })
+          .then(async (res: any) => {
+            const data = await res.json();
+            setIsEditHistory(false);
+            if (firmId) {
+              getAllHistory(firmId);
+              setIsLoading(true);
+            }
+            if (customerId) {
+              getUserHistory(customerId);
+              setIsLoading(true);
+            }
+          })
+          .catch((e: any) => {
+            console.log(e);
+          });
+  
+        setIsEditHistory(false);
+      } catch (e) {
+        console.log(e);
+      }
+    };
 
   const renderItem = ({ item }: any) => {
     return (
@@ -300,7 +279,7 @@ const ShowHistory = ({ route }: { route: any }) => {
                 size={24}
                 color="#FF0000"
                 onPress={() => {
-                  deleteHistory(item);
+                  deleteHistory(item._id)
                 }}
               />
             </View>
@@ -324,11 +303,11 @@ const ShowHistory = ({ route }: { route: any }) => {
             style={[
               styles.value,
               {
-                color: item.amount < 0 ? 'red' : 'green',
+                color: isFarmer || item.amount < 0 ? 'red' : 'green',
               },
             ]}
           >
-            ₹ {item.amount < 0 ? '-' : '+'}
+            ₹ {isFarmer || item.amount < 0 ? '-' : '+'}
             {Math.abs(item.amount)}
           </Text>
         </View>
@@ -339,6 +318,11 @@ const ShowHistory = ({ route }: { route: any }) => {
             <Text style={styles.value}>{item.description}</Text>
           </View>
         )}
+        <View>
+          <View style={{}}>
+            <Text></Text>
+          </View>
+        </View>
       </View>
     );
   };
@@ -349,36 +333,17 @@ const ShowHistory = ({ route }: { route: any }) => {
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.heroContainer}>
-        <View
-          style={{
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
+        <TouchableOpacity
+          style={styles.backBox}
+          onPress={() => navigation.goBack()}
         >
-          <TouchableOpacity
-            style={[styles.backBox, { alignSelf: 'flex-start' }]}
-            onPress={() => navigation.goBack()}
-          >
-            <Icon name="chevron-back" size={32} color="#FFF" />
-            <Text style={styles.historyText}>Back</Text>
-          </TouchableOpacity>
+          <Icon name="chevron-back" size={32} color="#FFF" />
+          <Text style={styles.historyText}>Back</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.backBox,
-              { alignSelf: 'flex-end', justifyContent: 'flex-end' },
-            ]}
-            onPress={SeeAllHistory}
-          >
-            <Text style={styles.historyText}>See all</Text>
-            <Icon name="chevron-forward" size={32} color="#FFF" />
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.title}>1 Month History</Text>
+        <Text style={styles.title}>All History</Text>
       </View>
 
       {/* show filter buttons */}
@@ -553,11 +518,12 @@ const ShowHistory = ({ route }: { route: any }) => {
           </View>
         </View>
       </Modal>
+      
     </View>
   );
 };
 
-export default ShowHistory;
+export default ShowAllHistory;
 
 const styles = StyleSheet.create({
   container: {
@@ -576,7 +542,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   backBox: {
-    width: '50%',
+    width: '100%',
     height: 50,
     flexDirection: 'row',
     alignItems: 'center',
@@ -650,7 +616,7 @@ const styles = StyleSheet.create({
     },
   },
 
-  stockContainer: {
+    stockContainer: {
     width: '100%',
     height: 100,
     display: 'flex',

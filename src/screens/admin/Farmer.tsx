@@ -1,7 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
   Modal,
   StyleSheet,
   Text,
@@ -10,16 +8,13 @@ import {
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import { BASE_URL, getToken } from '../../../token/tokenStorage';
+import { BASE_URL } from '../../../token/tokenStorage';
 import { useSelector } from 'react-redux';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import BottomSheet from '@gorhom/bottom-sheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import FaIcon from 'react-native-vector-icons/Ionicons';
-import {
-  ALERT_TYPE,
-  Toast,
-} from 'react-native-alert-notification';
+import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
 
 const Farmers = () => {
@@ -87,7 +82,6 @@ const Farmers = () => {
     cowRate: 0,
     userCode: '',
   });
-  
 
   const [isEditFarmer, setIsEditFarmer] = useState<boolean>(false);
 
@@ -107,12 +101,12 @@ const Farmers = () => {
     })
       .then(async (res: any) => {
         const { users } = await res.json();
-        const data =  users.map((u:any)=>{
+        const data = users.map((u: any) => {
           return {
             ...u,
-            cowRate:String(u.cowRate),
-            buffaloRate: String(u.buffaloRate)
-          }
+            cowRate: String(u.cowRate),
+            buffaloRate: String(u.buffaloRate),
+          };
         });
         setAllFarmer(data);
         setAllShowFarmer(data);
@@ -159,16 +153,18 @@ const Farmers = () => {
       body: JSON.stringify(payload),
     })
       .then(async (res: any) => {
-        const user = await res.json();
-        console.log('user : ', user);
-        const newUser = {
-          name: user.name,
-          buffaloRate: user.buffaloRate,
-          cowRate: user.cowRate,
-          phoneNumber: user.phoneNumber,
-          userCode: user.userCode,
-          _id: user._id,
-        };
+        const { user, status } = await res.json();
+        if (status === 401) {
+          setIsLoading(false);
+
+          Toast.show({
+            type: ALERT_TYPE.DANGER,
+            title: 'Error',
+            textBody: `Farmer Already Exist!!`,
+          });
+
+          return;
+        }
         if (isEditFarmer) {
           getFarmers();
           Toast.show({
@@ -177,14 +173,13 @@ const Farmers = () => {
             textBody: `${Farmer.name} Farmer updated!!`,
           });
         } else {
-          setAllFarmer(prev => [...prev, newUser]);
-          setAllShowFarmer(prev => [...prev, newUser]);
           Toast.show({
             type: ALERT_TYPE.SUCCESS,
             title: 'Success',
             textBody: `${Farmer.name} Farmer created!!`,
           });
         }
+        getFarmers();
       })
       .catch((e: any) => {
         console.log(e);
@@ -213,22 +208,18 @@ const Farmers = () => {
     bottomSheetRefDelete.current?.close();
   };
 
-  // useEffect(()=>{
-  //       if (!query) {
-  //     setAllShowFarmer(allFarmer);
-  //   }
-  // },[query])
-
   const filterFarmer = () => {
     if (!query) {
       setAllShowFarmer(allFarmer);
     } else {
-      const filteredData = allShowFarmer.filter((cust: any) =>
-        String(cust.name)
-          .toLocaleLowerCase()
-          .includes(String(query).toLocaleLowerCase()) ||     String(cust.userCode)
-          .toLocaleLowerCase()
-          .includes(String(query).toLocaleLowerCase()) ,
+      const filteredData = allShowFarmer.filter(
+        (cust: any) =>
+          String(cust.name)
+            .toLocaleLowerCase()
+            .includes(String(query).toLocaleLowerCase()) ||
+          String(cust.userCode)
+            .toLocaleLowerCase()
+            .includes(String(query).toLocaleLowerCase()),
       );
       setAllShowFarmer(filteredData);
     }
@@ -253,7 +244,6 @@ const Farmers = () => {
           <TextInput
             editable
             multiline
-            // numberOfLines={4}
             maxLength={40}
             onChangeText={text => setQuery(text)}
             value={query}
@@ -261,16 +251,11 @@ const Farmers = () => {
             placeholder="Search farmers..."
           />
         </View>
-        <FaIcon
-          name="search"
-          size={30}
-          // color={earnings < 0 ? '#713333ff' : '#3b613cff'}
-          onPress={filterFarmer}
-        />
+        <FaIcon name="search" size={30} onPress={filterFarmer} />
       </View>
       <View style={styles.stocksContainer}>
         {allShowFarmer.length > 0 ? (
-          allShowFarmer.map((Farmer: any) => (
+          allShowFarmer.map((Farmer: any, index: number) => (
             <TouchableOpacity
               onPress={() =>
                 navigation.navigate('FarmerPage', {
@@ -278,14 +263,14 @@ const Farmers = () => {
                   userType: 'farmer',
                 })
               }
-              key={Farmer._id}
+              key={Farmer._id ?? index}
               style={styles.cardContainer}
             >
               <View style={styles.cardOne}>
                 <Text
                   style={{ fontSize: 17, fontWeight: 700, color: '#5086E7' }}
                 >
-                  {Farmer.name}
+                  {Farmer.name} ({Farmer.userCode})
                 </Text>
               </View>
               <View style={styles.cardTwo}>
@@ -296,7 +281,7 @@ const Farmers = () => {
                   onPress={() => {
                     setIsEditFarmer(true);
                     setBottomSheetIndex(true);
-    
+
                     setSelectedFarmer(Farmer);
                     setFarmer(Farmer);
                   }}
@@ -326,17 +311,6 @@ const Farmers = () => {
             </Text>
           </View>
         )}
-        {/* <SafeAreaView> */}
-        {/* <FlatList
-            data={stocks}
-            renderItem={({ item }) => (
-              <View style={styles.cardContainer}>
-
-              </View>
-            )}
-            keyExtractor={item => item._id}
-          /> */}
-        {/* </SafeAreaView> */}
       </View>
 
       <View style={styles.ButtonBox}>
@@ -371,10 +345,7 @@ const Farmers = () => {
         animationType="fade"
         transparent={true}
         visible={bottomSheetIndex}
-        onRequestClose={() => {
-          // Alert.alert('Modal has been closed.');
-          // setModalVisible(!modalVisible);
-        }}
+        onRequestClose={() => {}}
         style={{
           flex: 1,
           display: 'flex',
@@ -394,16 +365,6 @@ const Farmers = () => {
                 color="#333"
                 onPress={() => {
                   setBottomSheetIndex(false);
-                  // setIsEditStock(false);
-                  // setStockName('');
-                  // setStockPrice('');
-                  // setStockQuantity('');
-                  // setSelectedStock({
-                  //   item: '',
-                  //   quantity: 0,
-                  //   _id: '',
-                  //   price: 0,
-                  // });
                 }}
               />
             </View>
@@ -466,7 +427,12 @@ const Farmers = () => {
               </View>
             </View>
             <View style={styles.stockContainer}>
-              <View style={[styles.inputBox,{width:isEditFarmer?"100%":"50%"}]}>
+              <View
+                style={[
+                  styles.inputBox,
+                  { width: isEditFarmer ? '100%' : '50%' },
+                ]}
+              >
                 <TextInput
                   editable
                   multiline
@@ -516,10 +482,7 @@ const Farmers = () => {
         animationType="fade"
         transparent={true}
         visible={bottomSheetDeleteIndex}
-        onRequestClose={() => {
-          // Alert.alert('Modal has been closed.');
-          // setModalVisible(!modalVisible);
-        }}
+        onRequestClose={() => {}}
         style={{
           flex: 1,
           display: 'flex',

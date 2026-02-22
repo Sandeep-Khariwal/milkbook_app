@@ -1,17 +1,14 @@
-import React, { Component, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Modal,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import Customers from '../screens/admin/Customers';
 import { createStackNavigator } from '@react-navigation/stack';
 import CustomerHome from '../screens/customers/CustomerHome';
-import FaIcon from 'react-native-vector-icons/Ionicons';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteToken } from '../../token/tokenStorage';
 import { setFirmDetails } from '../../redux/slices/firmSlice';
@@ -20,6 +17,7 @@ import ShowHistory from '../screens/commonScreen/ShowHistory';
 import { SceneMap, TabBar, TabView } from 'react-native-tab-view';
 import AllFarmers from '../screens/farmers/AllFarmers';
 import FarmerHome from '../screens/farmers/FarmerHome';
+import ShowAllHistory from '../screens/commonScreen/AllHistory';
 
 const Stack = createStackNavigator();
 
@@ -35,6 +33,10 @@ export default function DistributerNavigator() {
       <Stack.Screen name="CustomerPage" component={CustomerHome} />
       <Stack.Screen name="FarmerPage" component={FarmerHome} />
       <Stack.Screen name="History" component={ShowHistory} />
+            <Stack.Screen
+        name="AllHistory"
+        component={ShowAllHistory}
+      />
     </Stack.Navigator>
   );
 }
@@ -47,7 +49,6 @@ const AllCustomers = () => {
   const dispatch = useDispatch();
 
   const Logout = async () => {
-    // bottomSheetRef.current?.close();
     await deleteToken();
     const firmData = {
       name: '',
@@ -55,7 +56,6 @@ const AllCustomers = () => {
       role: '',
     };
     dispatch(setFirmDetails(firmData));
-    // navigation.navigate("auth")
   };
 
   return (
@@ -72,16 +72,13 @@ const routes = [
 
 const DistributerHome = () => {
   const distributer = useSelector((state: any) => state.distributer.value);
-  const layout = useWindowDimensions();
   const [index, setIndex] = useState<number>(0);
 
   const firm = useSelector((state: any) => state.firm.value);
-  // console.log('distributer : ', distributer);
   const [showLogout, setShowLogout] = useState<boolean>(false);
   const dispatch = useDispatch();
 
   const Logout = async () => {
-    // bottomSheetRef.current?.close();
     await deleteToken();
     const firmData = {
       name: '',
@@ -89,7 +86,6 @@ const DistributerHome = () => {
       role: '',
     };
     dispatch(setFirmDetails(firmData));
-    // navigation.navigate("auth")
   };
   return (
     <View style={{ flex: 1 }}>
@@ -130,11 +126,6 @@ const DistributerHome = () => {
               backgroundColor: '#fff',
               elevation: 0, // remove android shadow
             }}
-            // labelStyle={{
-            //   fontSize: 14,
-            //   fontWeight: '600',
-            //   textTransform: 'capitalize',
-            // }}
             activeColor="#5086E7"
             inactiveColor="#999"
           />
@@ -145,8 +136,6 @@ const DistributerHome = () => {
         transparent={true}
         visible={showLogout}
         onRequestClose={() => {
-          // Alert.alert('Modal has been closed.');
-          // setModalVisible(!modalVisible);
         }}
         style={{
           flex: 1,

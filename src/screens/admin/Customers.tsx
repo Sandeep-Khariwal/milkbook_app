@@ -1,7 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
   Modal,
   StyleSheet,
   Text,
@@ -10,16 +8,13 @@ import {
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import { BASE_URL, getToken } from '../../../token/tokenStorage';
+import { BASE_URL } from '../../../token/tokenStorage';
 import { useSelector } from 'react-redux';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import BottomSheet from '@gorhom/bottom-sheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import FaIcon from 'react-native-vector-icons/Ionicons';
-import {
-  ALERT_TYPE,
-  Toast,
-} from 'react-native-alert-notification';
+import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
 
 const Customers = () => {
@@ -65,8 +60,7 @@ const Customers = () => {
       _id: string;
     }[]
   >([]);
-  // ref
-  
+
   const bottomSheetRef = useRef<BottomSheet>(null);
   const bottomSheetRefDelete = useRef<BottomSheet>(null);
   const [bottomSheetIndex, setBottomSheetIndex] = useState<boolean>(false);
@@ -91,14 +85,6 @@ const Customers = () => {
 
   const [isEditCustomer, setIsEditCustomer] = useState<boolean>(false);
 
-  // callbacks
-  // const handleSheetChanges = useCallback((index: number) => {
-  //   setBottomSheetIndex(index);
-  // }, []);
-  // const handleSheetChangesDelete = useCallback((index: number) => {
-  //   setBottomSheetDeleteIndex(index);
-  // }, []);
-
   useEffect(() => {
     getCustomers();
   }, []);
@@ -115,15 +101,15 @@ const Customers = () => {
     })
       .then(async (res: any) => {
         const { users } = await res.json();
-        const filterdUsers = users.filter(
-          (d: any) => d.userType === 'customer',
-        ).map((u:any)=>{
-          return {
-            ...u,
-            cowRate:String(u.cowRate),
-            buffaloRate: String(u.buffaloRate)
-          }
-        });
+        const filterdUsers = users
+          .filter((d: any) => d.userType === 'customer')
+          .map((u: any) => {
+            return {
+              ...u,
+              cowRate: String(u.cowRate),
+              buffaloRate: String(u.buffaloRate),
+            };
+          });
         setAllCustomer(filterdUsers);
         setAllShowCustomer(filterdUsers);
         setIsLoading(false);
@@ -166,7 +152,18 @@ const Customers = () => {
       }),
     })
       .then(async (res: any) => {
-        const { user } = await res.json();
+        const { user, status } = await res.json();
+        if (status === 401) {
+          setIsLoading(false);
+
+          Toast.show({
+            type: ALERT_TYPE.DANGER,
+            title: 'Error',
+            textBody: `Customer Already Exist!!`,
+          });
+
+          return;
+        }
         const newUser = {
           name: user.name,
           phoneNumber: user.phoneNumber,
@@ -212,6 +209,7 @@ const Customers = () => {
         setAllCustomer(prev =>
           prev.filter(c => c._id !== selectedCustomer._id),
         );
+        getCustomers();
       })
       .catch((e: any) => {
         console.log(e);
@@ -221,22 +219,18 @@ const Customers = () => {
     bottomSheetRefDelete.current?.close();
   };
 
-    // useEffect(()=>{
-    //       if (!query) {
-    //     setAllShowCustomer(allCustomer);
-    //   }
-    // },[query])
-
   const filterCustomer = () => {
     if (!query) {
       setAllShowCustomer(allCustomer);
     } else {
-      const filteredData = allShowCustomer.filter((cust: any) =>
-        String(cust.name)
-          .toLocaleLowerCase()
-          .includes(String(query).toLocaleLowerCase()) ||  String(cust.userCode)
-          .toLocaleLowerCase()
-          .includes(String(query).toLocaleLowerCase()),
+      const filteredData = allShowCustomer.filter(
+        (cust: any) =>
+          String(cust.name)
+            .toLocaleLowerCase()
+            .includes(String(query).toLocaleLowerCase()) ||
+          String(cust.userCode)
+            .toLocaleLowerCase()
+            .includes(String(query).toLocaleLowerCase()),
       );
       setAllShowCustomer(filteredData);
     }
@@ -261,7 +255,6 @@ const Customers = () => {
           <TextInput
             editable
             multiline
-            // numberOfLines={4}
             maxLength={40}
             onChangeText={text => setQuery(text)}
             value={query}
@@ -269,16 +262,11 @@ const Customers = () => {
             placeholder="Search customer..."
           />
         </View>
-        <FaIcon
-          name="search"
-          size={30}
-          // color={earnings < 0 ? '#713333ff' : '#3b613cff'}
-          onPress={filterCustomer}
-        />
+        <FaIcon name="search" size={30} onPress={filterCustomer} />
       </View>
       <View style={styles.stocksContainer}>
         {allShowCustomer.length > 0 ? (
-          allShowCustomer.map((customer: any) => (
+          allShowCustomer.map((customer: any, index: number) => (
             <TouchableOpacity
               onPress={() =>
                 navigation.navigate('CustomerPage', {
@@ -286,14 +274,14 @@ const Customers = () => {
                   userType: 'customer',
                 })
               }
-              key={customer._id}
+              key={customer._id ?? index}
               style={styles.cardContainer}
             >
               <View style={styles.cardOne}>
                 <Text
                   style={{ fontSize: 17, fontWeight: 700, color: '#5086E7' }}
                 >
-                  {customer.name}
+                  {customer.name} ({customer.userCode})
                 </Text>
               </View>
               <View style={styles.cardTwo}>
@@ -335,17 +323,6 @@ const Customers = () => {
             </Text>
           </View>
         )}
-        {/* <SafeAreaView> */}
-        {/* <FlatList
-            data={stocks}
-            renderItem={({ item }) => (
-              <View style={styles.cardContainer}>
-
-              </View>
-            )}
-            keyExtractor={item => item._id}
-          /> */}
-        {/* </SafeAreaView> */}
       </View>
 
       <View style={styles.ButtonBox}>
@@ -380,10 +357,7 @@ const Customers = () => {
         animationType="fade"
         transparent={true}
         visible={bottomSheetIndex}
-        onRequestClose={() => {
-          // Alert.alert('Modal has been closed.');
-          // setModalVisible(!modalVisible);
-        }}
+        onRequestClose={() => {}}
         style={{
           flex: 1,
           display: 'flex',
@@ -403,16 +377,6 @@ const Customers = () => {
                 color="#333"
                 onPress={() => {
                   setBottomSheetIndex(false);
-                  // setIsEditStock(false);
-                  // setStockName('');
-                  // setStockPrice('');
-                  // setStockQuantity('');
-                  // setSelectedStock({
-                  //   item: '',
-                  //   quantity: 0,
-                  //   _id: '',
-                  //   price: 0,
-                  // });
                 }}
               />
             </View>
@@ -519,44 +483,6 @@ const Customers = () => {
               </View>
             </View>
 
-            {/* <View style={styles.stockContainer}>
-                          <View
-                            style={[
-                              styles.inputBox,
-                              { width: isEditCustomer ? '100%' : '50%' },
-                            ]}
-                          >
-                            <TextInput
-                              editable
-                              multiline
-                              numberOfLines={4}
-                              maxLength={40}
-                              onChangeText={text =>
-                                setCustomer(prev => ({ ...prev, userCode: text }))
-                              }
-                              value={String(customer.userCode)}
-                              style={styles.textInput}
-                              placeholder="Code"
-                            />
-                          </View>
-                          {!isEditCustomer && (
-                            <View style={styles.inputBox}>
-                              <TextInput
-                                editable
-                                multiline
-                                numberOfLines={4}
-                                maxLength={40}
-                                onChangeText={text =>
-                                  setCustomer(prev => ({ ...prev, password: text }))
-                                }
-                                value={customer.password}
-                                style={styles.textInput}
-                                placeholder="Enter Password"
-                              />
-                            </View>
-                          )}
-                        </View> */}
-
             <View style={styles.stockContainer}>
               <TouchableOpacity
                 style={[styles.button, { marginTop: 20 }]}
@@ -575,10 +501,7 @@ const Customers = () => {
         animationType="fade"
         transparent={true}
         visible={bottomSheetDeleteIndex}
-        onRequestClose={() => {
-          // Alert.alert('Modal has been closed.');
-          // setModalVisible(!modalVisible);
-        }}
+        onRequestClose={() => {}}
         style={{
           flex: 1,
           display: 'flex',

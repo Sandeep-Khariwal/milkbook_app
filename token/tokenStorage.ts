@@ -1,12 +1,8 @@
 import * as Keychain from 'react-native-keychain';
-// mongodb+srv://milkbill5788_db_user:milkbook123@cluster0.j9r1cii.mongodb.net/test?retryWrites=true&w=majority
-// mongodb+srv://milkbill5788_db_user:milkbook123@cluster0.j9r1cii.mongodb.net/?appName=milkbill
-export const BASE_URL = "https://milk-time-backend-utlt.onrender.com/api/v1" // Live url
-// export const BASE_URL = "http://192.168.0.103:9000/api/v1" // pg
+// export const BASE_URL = "https://milk-time-backend-utlt.onrender.com/api/v1" // Live url
+export const BASE_URL = "http://72.61.251.156:9000/api/v1" // hostinger Live url
+// export const BASE_URL = "http://192.168.0.102:9000/api/v1" // pg
 // export const BASE_URL = "http://192.168.1.8:9000/api/v1" // office
-// export const BASE_URL = "http://10.196.86.56:9000/api/v1" //my mobile
-// export const BASE_URL = "http://10.88.186.56:9000/api/v1" // bhbi mobile
-// export const BASE_URL = "http://192.168.1.80:9000/api/v1" // anand acadmy
 
 export async function saveToken(token: string) {
   try {

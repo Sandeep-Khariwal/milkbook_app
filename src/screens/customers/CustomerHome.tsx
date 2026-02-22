@@ -1,9 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Modal,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -18,13 +16,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import AddEntryAndSale from '../../components/customer/AddEntryAndSale';
 import { BASE_URL, deleteToken } from '../../../token/tokenStorage';
 import EntriesTable from './EntriesTable';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import LogoutButton from '../../components/LogoutButton';
 import { setFirmDetails } from '../../../redux/slices/firmSlice';
 import {
   ALERT_TYPE,
-  Dialog,
-  AlertNotificationRoot,
   Toast,
 } from 'react-native-alert-notification';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
@@ -43,33 +37,18 @@ const CustomerHome = ({ route }: { route: any }) => {
   const [showAddPaymentModal, setShowAddPaymentModal] =
     useState<boolean>(false);
   const navigation = useNavigation<any>();
+  const [totalWeight, setTotalWeight] = useState<number>(0);
   const [customer, setCustomer] = useState<{
     name: string;
+    userCode: string;
     cowRate: number;
     buffaloRate: number;
     phoneNumber: string;
     _id: string;
-  }>({ name: '', phoneNumber: '', _id: '', cowRate: 0 , buffaloRate:0 });
+  }>({ name: '', phoneNumber: '', _id: '', userCode:'', cowRate: 0, buffaloRate: 0 });
   const [cashPayment, setCashPayment] = useState<string>('');
   const [cashPaymentDescription, setCashPaymentDescription] =
     useState<string>('');
-
-  useEffect(() => {
-    // let current = 0;
-    // const targetNumber = 2000; // apiValue;   // from API
-    // const step = 20; // how much to increase each tick
-    // const intervalSpeed = 20; // ms between updates
-    // const timer = setInterval(() => {
-    //   current += step;
-    //   if (current >= targetNumber) {
-    //     clearInterval(timer);
-    //     setEarnings(targetNumber);
-    //   } else {
-    //     setEarnings(current);
-    //   }
-    // }, intervalSpeed);
-    // return () => clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     getUser();
@@ -88,11 +67,11 @@ const CustomerHome = ({ route }: { route: any }) => {
       .then(async (res: any) => {
         const { user } = await res.json();
         setEarnings(user.earnings);
-        console.log('customer user : ', user);
 
         const newUser = {
           _id: user._id,
           name: user.name,
+          userCode: user.userCode,
           buffaloRate: user.buffaloRate,
           cowRate: user.cowRate,
           phoneNumber: user.phoneNumber,
@@ -107,7 +86,6 @@ const CustomerHome = ({ route }: { route: any }) => {
   };
 
   const Logout = async () => {
-    // bottomSheetRef.current?.close();
     await deleteToken();
     const firmData = {
       name: '',
@@ -115,7 +93,6 @@ const CustomerHome = ({ route }: { route: any }) => {
       role: '',
     };
     dispatch(setFirmDetails(firmData));
-    // navigation.navigate("auth")
   };
 
   const SeeHistory = () => {
@@ -143,7 +120,6 @@ const CustomerHome = ({ route }: { route: any }) => {
       description: cashPaymentDescription,
     };
 
-
     setIsLoading(true);
     await fetch(`${BASE_URL}/user/setPayment/${id}`, {
       method: 'PUT',
@@ -153,12 +129,12 @@ const CustomerHome = ({ route }: { route: any }) => {
       body: JSON.stringify(payload),
     })
       .then(async (x: any) => {
-        const data = await x.json();
 
         setShowAddPaymentModal(false);
         setCashPayment('');
         setCashPaymentDescription('');
         setIsLoading(false);
+        getUser()
       })
       .catch((e: any) => {
         console.log(e);
@@ -167,9 +143,7 @@ const CustomerHome = ({ route }: { route: any }) => {
 
   return (
     <View style={styles.container}>
-      <View
-        style={{ ...styles.heroContainer, height: isCustomer ? '15%' : '15%' }}
-      >
+      <View style={{ ...styles.heroContainer }}>
         {/* marginTop: 50 */}
         {!isCustomer && (
           <TouchableOpacity
@@ -190,21 +164,9 @@ const CustomerHome = ({ route }: { route: any }) => {
         </Text>
         {isCustomer && (
           <Text style={{ color: '#fff', fontSize: 16, marginTop: 5 }}>
-            {customer.name}, {customer.phoneNumber}
+           {customer.name}({customer.userCode}), {customer.phoneNumber}
           </Text>
         )}
-        {/* {isCustomer && (
-          <View style={{ height: 49, width: '100%', paddingLeft: 10 }}>
-            <IconLogout
-              name="logout"
-              size={32}
-              color="#FFF"
-              onPress={() => {
-                setShowLogout(true);
-              }}
-            />
-          </View>
-        )} */}
       </View>
 
       <View style={styles.historyCont}>
@@ -251,11 +213,12 @@ const CustomerHome = ({ route }: { route: any }) => {
         style={{
           ...styles.eraningBox,
           backgroundColor: earnings < 0 ? '#dccfcfff' : '#e1e6e2ff',
-          borderColor: earnings < 0 ? '#dccfcfff' : '#e1e6e2ff',
-          //   backgroundColor: '#b0eab1ff',
-          // borderColor: '#b0eab1ff', #108512ff
+          borderColor: earnings < 0 ? '#dccfcfff' : '#e1e6e2ff'
         }}
       >
+        <View style={{width:"100%",paddingLeft:4, paddingRight:4, display:"flex", flexDirection:"row", alignItems:"center"}} >
+          <Text style={{fontSize:16, color:"#3b613cff"  }} >{customer.name} ({customer.userCode}) </Text>
+        </View>
         <Text
           style={{
             ...styles.milkFarmText,
@@ -288,19 +251,41 @@ const CustomerHome = ({ route }: { route: any }) => {
               ...styles.milkFarmText,
               color: earnings < 0 ? '#713333ff' : '#3b613cff',
               marginTop: 4,
+              fontSize:26
             }}
           >
             {earnings?.toFixed(2) ?? 0}
           </Text>
         </View>
+        {/* {isCustomer && ( */}
+          <View
+            style={{
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingTop: 10,
+              gap: 5,
+            }}
+          >
+            <Text
+              style={{
+                ...styles.milkFarmText,
+                color: earnings < 0 ? '#713333ff' : '#3b613cff',
+                marginTop: 4,
+              }}
+            >
+              {totalWeight?.toFixed(1) ?? 0}Kg (Milk)
+            </Text>
+          </View>
+        {/* )} */}
       </View>
       <Modal
         animationType="fade"
         transparent={true}
         visible={showLogout}
         onRequestClose={() => {
-          // Alert.alert('Modal has been closed.');
-          // setModalVisible(!modalVisible);
         }}
         style={{
           flex: 1,
@@ -352,8 +337,15 @@ const CustomerHome = ({ route }: { route: any }) => {
         isCustomer={isCustomer}
         customer={customer}
         userType={userType}
+        findTotalWeight={wt => {
+          setTotalWeight(wt);
+        }}
         dataUpdate={() => {
           getUser();
+        }}
+        setTotalEarn={(wt, amnt) => {
+          setTotalWeight(wt);
+          setEarnings(amnt);
         }}
       />
 
@@ -380,16 +372,6 @@ const CustomerHome = ({ route }: { route: any }) => {
                 color="#333"
                 onPress={() => {
                   setShowAddPaymentModal(false);
-                  // setIsEditStock(false);
-                  // setStockName('');
-                  // setStockPrice('');
-                  // setStockQuantity('');
-                  // setSelectedStock({
-                  //   item: '',
-                  //   quantity: 0,
-                  //   _id: '',
-                  //   price: 0,
-                  // });
                 }}
               />
             </View>
@@ -443,11 +425,10 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 28,
     borderBottomLeftRadius: 28,
     display: 'flex',
-    // flexDirection: 'row',
     alignItems: 'center',
-    // justifyContent: 'space-around',
     backgroundColor: '#5086E7',
     paddingTop: 20,
+    paddingBottom: 20,
   },
   backBox: {
     width: '100%',
@@ -457,15 +438,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   milkFarmText: {
-    fontSize: 24,
+    fontSize: 20,
     color: 'white',
     fontWeight: 500,
     fontFamily: 'sans-serif',
   },
   eraningBox: {
     width: '90%',
-    height: 200,
+    // height: 200,
     borderWidth: 1,
+    paddingTop:20,
+    paddingBottom:20,
 
     borderRadius: 20,
     alignSelf: 'center',

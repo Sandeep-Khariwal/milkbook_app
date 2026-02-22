@@ -1,9 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Modal,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -16,16 +14,9 @@ import FaIcon from 'react-native-vector-icons/FontAwesome';
 import { useDispatch, useSelector } from 'react-redux';
 import AddEntryAndSale from '../../components/customer/AddEntryAndSale';
 import { BASE_URL, deleteToken } from '../../../token/tokenStorage';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import LogoutButton from '../../components/LogoutButton';
 import { setFirmDetails } from '../../../redux/slices/firmSlice';
 import FeIcon from 'react-native-vector-icons/Feather';
-import {
-  ALERT_TYPE,
-  Dialog,
-  AlertNotificationRoot,
-  Toast,
-} from 'react-native-alert-notification';
+import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import EntriesTable from '../customers/EntriesTable';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
 
@@ -33,6 +24,7 @@ const FarmerHome = ({ route }: { route: any }) => {
   const id = route.params.id;
 
   const userType = route.params.userType;
+
   const firm = useSelector((state: any) => state.firm.value);
   const isFarmer = firm.role === 'farmer';
 
@@ -40,52 +32,40 @@ const FarmerHome = ({ route }: { route: any }) => {
   const dispatch = useDispatch();
 
   const [earnings, setEarnings] = useState<number>(0);
+  const [totalWeight, setTotalWeight] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigation = useNavigation<any>();
   const [showAddPaymentModal, setShowAddPaymentModal] =
     useState<boolean>(false);
   const [customer, setCustomer] = useState<{
     name: string;
+    userCode: string;
     buffaloRate: number;
     cowRate: number;
     phoneNumber: string;
     _id: string;
-  }>({ name: '', phoneNumber: '', _id: '', buffaloRate: 0 , cowRate:0 });
+  }>({
+    name: '',
+    phoneNumber: '',
+    _id: '',
+    userCode: '',
+    buffaloRate: 0,
+    cowRate: 0,
+  });
 
   const [cashPayment, setCashPayment] = useState<string>('');
   const [cashPaymentDescription, setCashPaymentDescription] =
     useState<string>('');
 
   useEffect(() => {
-    // let current = 0;
-    // const targetNumber = 2000; // apiValue;   // from API
-    // const step = 20; // how much to increase each tick
-    // const intervalSpeed = 20; // ms between updates
-    // const timer = setInterval(() => {
-    //   current += step;
-    //   if (current >= targetNumber) {
-    //     clearInterval(timer);
-    //     setEarnings(targetNumber);
-    //   } else {
-    //     setEarnings(current);
-    //   }
-    // }, intervalSpeed);
-    // return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
     getUser();
   }, []);
 
   if (isLoading) {
-    return (
-      <LoadingOverlay visible={isLoading} />
-    );
+    return <LoadingOverlay visible={isLoading} />;
   }
 
   const getUser = async () => {
-    console.log("id is : ",id);
-    
     setIsLoading(true);
     await fetch(`${BASE_URL}/user/getUser/${id}`, {
       method: 'GET',
@@ -95,18 +75,19 @@ const FarmerHome = ({ route }: { route: any }) => {
     })
       .then(async (res: any) => {
         const { user } = await res.json();
-        console.log("getting user : ",user);
-        
+
         setEarnings(user.earnings);
         const newUser = {
           _id: user._id,
           name: user.name,
+          userCode: user.userCode,
           buffaloRate: user.buffaloRate,
           cowRate: user.buffaloRate,
           phoneNumber: user.phoneNumber,
         };
         setCustomer(newUser);
         setIsLoading(false);
+        setTotalWeight(0);
       })
       .catch((e: any) => {
         console.log(e);
@@ -115,7 +96,6 @@ const FarmerHome = ({ route }: { route: any }) => {
   };
 
   const Logout = async () => {
-    // bottomSheetRef.current?.close();
     await deleteToken();
     const firmData = {
       name: '',
@@ -123,7 +103,6 @@ const FarmerHome = ({ route }: { route: any }) => {
       role: '',
     };
     dispatch(setFirmDetails(firmData));
-    // navigation.navigate("auth")
   };
 
   const SeeHistory = () => {
@@ -147,11 +126,9 @@ const FarmerHome = ({ route }: { route: any }) => {
       firmId: firm.id,
       amount: -Number(cashPayment),
       user: customer._id,
-      userType: 'customer',
+      userType: 'farmer',
       description: cashPaymentDescription,
     };
-
-    console.log('payload : ', payload);
 
     setIsLoading(true);
     await fetch(`${BASE_URL}/user/setPayment/${id}`, {
@@ -166,7 +143,7 @@ const FarmerHome = ({ route }: { route: any }) => {
         setCashPayment('');
         setCashPaymentDescription('');
         setIsLoading(false);
-        getUser()
+        getUser();
       })
       .catch((e: any) => {
         console.log(e);
@@ -175,30 +152,26 @@ const FarmerHome = ({ route }: { route: any }) => {
 
   return (
     <View style={styles.container}>
-      <View
-        style={{ ...styles.heroContainer, height: isFarmer ? '15%' : '15%' }}
-      >
+      <View style={{ ...styles.heroContainer }}>
         {/* marginTop: 50 */}
         {!isFarmer && (
-          <TouchableOpacity   onPress={() => {
-                navigation.goBack();
-              }} style={{ ...styles.backBox, marginTop: 10 }}>
-            <Icon
-              name="chevron-back"
-              size={32}
-              color="#FFF"
-            
-            />
+          <TouchableOpacity
+            onPress={() => {
+              navigation.goBack();
+            }}
+            style={{ ...styles.backBox, marginTop: 10 }}
+          >
+            <Icon name="chevron-back" size={32} color="#FFF" />
             <Text style={styles.milkFarmText}>Back</Text>
           </TouchableOpacity>
         )}
 
-        <Text style={{ ...styles.milkFarmText, marginTop: isFarmer? 30:15 }}>
+        <Text style={{ ...styles.milkFarmText, marginTop: isFarmer ? 30 : 15 }}>
           {String(firm?.name).toUpperCase()}
         </Text>
         {isFarmer && (
-          <Text style={{ color: '#fff', fontSize: 16 , marginTop:5}}>
-            {customer.name}, {customer.phoneNumber}
+          <Text style={{ color: '#fff', fontSize: 16, marginTop: 5 }}>
+            {customer.name}({customer.userCode}), {customer.phoneNumber}
           </Text>
         )}
       </View>
@@ -248,14 +221,27 @@ const FarmerHome = ({ route }: { route: any }) => {
           ...styles.eraningBox,
           backgroundColor: earnings < 0 ? '#dccfcfff' : '#e1e6e2ff',
           borderColor: earnings < 0 ? '#dccfcfff' : '#e1e6e2ff',
-          //   backgroundColor: '#b0eab1ff',
-          // borderColor: '#b0eab1ff', #108512ff
         }}
       >
+        <View
+          style={{
+            width: '100%',
+            paddingLeft: 4,
+            paddingRight: 4,
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+          }}
+        >
+          <Text style={{ fontSize: 16, color: '#3b613cff' }}>
+            {customer.name} ({customer.userCode}){' '}
+          </Text>
+        </View>
         <Text
           style={{
             ...styles.milkFarmText,
             color: earnings < 0 ? '#713333ff' : '#3b613cff',
+            fontSize:20
           }}
         >
           Total Earnings
@@ -286,7 +272,7 @@ const FarmerHome = ({ route }: { route: any }) => {
               marginTop: 4,
             }}
           >
-            {earnings.toFixed(2)}
+            {earnings?.toFixed(2) ?? 0}
           </Text>
         </View>
       </View>
@@ -294,10 +280,7 @@ const FarmerHome = ({ route }: { route: any }) => {
         animationType="fade"
         transparent={true}
         visible={showLogout}
-        onRequestClose={() => {
-          // Alert.alert('Modal has been closed.');
-          // setModalVisible(!modalVisible);
-        }}
+        onRequestClose={() => {}}
         style={{
           flex: 1,
           display: 'flex',
@@ -351,6 +334,11 @@ const FarmerHome = ({ route }: { route: any }) => {
         dataUpdate={() => {
           getUser();
         }}
+        setTotalEarn={(wt, amnt) => {
+          console.log('total ', wt, amnt);
+          setTotalWeight(wt);
+          setEarnings(amnt);
+        }}
       />
 
       <Modal
@@ -369,24 +357,22 @@ const FarmerHome = ({ route }: { route: any }) => {
       >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            <View style={{ width: '100%', display:"flex", flexDirection:"row", alignItems:"center", justifyContent:"space-between" }}>
-              <Text style={{fontWeight:700, fontSize:20}} >Add Payment</Text>
+            <View
+              style={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <Text style={{ fontWeight: 700, fontSize: 20 }}>Add Payment</Text>
               <FeIcon
                 name="x"
                 size={26}
                 color="#333"
                 onPress={() => {
                   setShowAddPaymentModal(false);
-                  // setIsEditStock(false);
-                  // setStockName('');
-                  // setStockPrice('');
-                  // setStockQuantity('');
-                  // setSelectedStock({
-                  //   item: '',
-                  //   quantity: 0,
-                  //   _id: '',
-                  //   price: 0,
-                  // });
                 }}
               />
             </View>
@@ -433,18 +419,17 @@ const FarmerHome = ({ route }: { route: any }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    minHeight: '100%',
   },
   heroContainer: {
     width: '100%',
     borderBottomRightRadius: 28,
     borderBottomLeftRadius: 28,
     display: 'flex',
-    // flexDirection: 'row',
     alignItems: 'center',
-    // justifyContent: 'space-around',
     backgroundColor: '#5086E7',
     paddingTop: 20,
+    paddingBottom: 20,
   },
   backBox: {
     width: '100%',
@@ -461,8 +446,10 @@ const styles = StyleSheet.create({
   },
   eraningBox: {
     width: '90%',
-    height: 200,
+    // height: 200,
     borderWidth: 1,
+    paddingTop: 20,
+    paddingBottom: 20,
 
     borderRadius: 20,
     alignSelf: 'center',

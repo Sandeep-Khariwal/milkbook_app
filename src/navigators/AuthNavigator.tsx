@@ -1,7 +1,6 @@
 import Icon from 'react-native-vector-icons/FontAwesome';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   Image,
   StyleSheet,
   Text,
@@ -18,17 +17,17 @@ import { setDistributerDetails } from '../../redux/slices/distributerSlice';
 import LoadingOverlay from '../HelperFunction/LoadingOverlay';
 import {
   ALERT_TYPE,
-  Dialog,
-  AlertNotificationRoot,
   Toast,
 } from 'react-native-alert-notification';
 import { setFarmerDetails } from '../../redux/slices/farmerSlice';
+
 
 export default function AuthNavigator() {
   const dispatch = useDispatch();
   const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
 
   const Login = async () => {
     setIsLoading(true);
@@ -42,9 +41,19 @@ export default function AuthNavigator() {
       .then(async (res: any) => {
         const data = await res.json();
         const { user, token, message, status } = data;
-        console.log('response in auth : ', data);
+        console.log("message : ",status,message);
+        
         setIsLoading(false);
         if (status === 404) {
+          Toast.show({
+            type: ALERT_TYPE.DANGER,
+            title: 'Error',
+            textBody: message,
+          });
+
+          return;
+        }
+        if (status === 500) {
           Toast.show({
             type: ALERT_TYPE.DANGER,
             title: 'Error',
@@ -80,7 +89,6 @@ export default function AuthNavigator() {
         }
       })
       .catch((e: any) => {
-        console.log('error found : ', e, e.message);
         setIsLoading(false);
       });
   };

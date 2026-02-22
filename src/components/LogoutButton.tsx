@@ -10,15 +10,10 @@ import IconLogout from 'react-native-vector-icons/AntDesign';
 const LogoutButton = (props: { showText: boolean }) => {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [bottomSheetIndex, setBottomSheetIndex] = useState<number>(-1);
-  const [openBottomSheet, setOpenBottomSheet] = useState<boolean>(false);
   const handleSheetChanges = useCallback((index: number) => {
     setBottomSheetIndex(index);
   }, []);
-  const navigation = useNavigation<any>();
-  const role = useSelector((state: any) => state.firm.value.role);
   const dispatch = useDispatch();
-
-  console.log('bottomSheetIndex : ', bottomSheetIndex);
 
   const Logout = async () => {
     bottomSheetRef.current?.close();
@@ -29,22 +24,17 @@ const LogoutButton = (props: { showText: boolean }) => {
       role: '',
     };
     dispatch(setFirmDetails(firmData));
-    // navigation.navigate("auth")
   };
   return (
     <View style={{ flex: 1 }}>
       <TouchableOpacity
         style={{
-          // width: '90%',
-          // borderWidth: 1,
           alignItems: 'center',
-          // borderColor: '#5086E7',
           backgroundColor: '#5185e6ff',
           borderRadius: 20,
           height: 50,
           display: 'flex',
           flexDirection: 'row',
-          // justifyContent: 'center',
           gap: 10,
           padding:10,
           paddingLeft:16
@@ -56,7 +46,6 @@ const LogoutButton = (props: { showText: boolean }) => {
           size={24}
           color="#FFF"
           onPress={() => {
-            // setShowLogout(true)
           }}
         />
         {props.showText && (
@@ -112,7 +101,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e7e7eeff',
     borderRadius: 5,
-    // height:400,
   },
   btnCss: {
     width: '90%',

@@ -1,9 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Image,
   Modal,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -12,16 +10,10 @@ import {
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import { BASE_URL } from '../../../token/tokenStorage';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import BottomSheet from '@gorhom/bottom-sheet';
 import FeIcon from 'react-native-vector-icons/Feather';
 import { SelectList } from 'react-native-dropdown-select-list';
-import {
-  ALERT_TYPE,
-  Dialog,
-  AlertNotificationRoot,
-  Toast,
-} from 'react-native-alert-notification';
+import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import DatePicker from 'react-native-date-picker';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
 
@@ -36,19 +28,10 @@ const AddEntryAndSale = (props: {
   userType: string;
   dataUpdate: () => void;
 }) => {
-  const isFarmer = props.userType === 'farmer';
   const firm = useSelector((state: any) => state.firm.value);
-  const user = useSelector((state: any) => state.customer.value);
   const bottomSheetRefAdd = useRef<BottomSheet>(null);
-  const bottomSheetRefSale = useRef<BottomSheet>(null);
   const [bottomSheetAdd, setBottomSheetAdd] = useState<boolean>(false);
   const [bottomSheetSale, setBottomSheetSale] = useState<boolean>(false);
-  // const handleSheetChangesAdd = useCallback((index: number) => {
-  //   setBottomSheetAdd(index);
-  // }, []);
-  // const handleSheetChangesSale = useCallback((index: number) => {
-  //   setBottomSheetSale(index);
-  // }, []);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [milkEntry, setMilkEntry] = useState<{
@@ -70,11 +53,9 @@ const AddEntryAndSale = (props: {
   const [selected, setSelected] = useState<string>('');
   const [selectedQuantity, setSelectedQuantity] = useState<string>('');
   const [date, setDate] = useState<Date>(new Date());
+  const [saleDate, setSaleDate] = useState<Date>(new Date());
   const [open, setOpen] = useState<boolean>(false);
   const [isBuffalo, setIsBuffalo] = useState<boolean>(true);
-
-  console.log("isBuffalo : ",isBuffalo);
-  
 
   useEffect(() => {
     if (date) {
@@ -154,8 +135,6 @@ const AddEntryAndSale = (props: {
       _id: milkEntry._id,
     };
 
-    console.log('payload : ', payload);
-
     setIsLoading(true);
 
     await fetch(`${BASE_URL}/entry/create`, {
@@ -210,7 +189,8 @@ const AddEntryAndSale = (props: {
       amount: amount,
       user: props.customer._id,
       userType: props.userType,
-      productName:selectedStock.item
+      productName: selectedStock.item,
+      date: saleDate,
     };
 
     await fetch(`${BASE_URL}/history/create`, {
@@ -264,10 +244,7 @@ const AddEntryAndSale = (props: {
         animationType="fade"
         transparent={true}
         visible={bottomSheetAdd}
-        onRequestClose={() => {
-          // Alert.alert('Modal has been closed.');
-          // setModalVisible(!modalVisible);
-        }}
+        onRequestClose={() => {}}
         style={{
           flex: 1,
           display: 'flex',
@@ -299,27 +276,13 @@ const AddEntryAndSale = (props: {
                 color="#333"
                 onPress={() => {
                   setBottomSheetAdd(false);
-                  // setBottomSheetIndex(false);
-                  // setIsEditStock(false);
-                  // setStockName('');
-                  // setStockPrice('');
-                  // setStockQuantity('');
-                  // setSelectedStock({
-                  //   item: '',
-                  //   quantity: 0,
-                  //   _id: '',
-                  //   price: 0,
-                  // });
                 }}
               />
             </View>
 
             <View style={styles.IconContainer}>
               <TouchableOpacity
-                style={[
-                  styles.iconWrapper,
-                  !isBuffalo && styles.selected,
-                ]}
+                style={[styles.iconWrapper, !isBuffalo && styles.selected]}
                 onPress={() => setIsBuffalo(false)}
               >
                 <Image
@@ -329,10 +292,7 @@ const AddEntryAndSale = (props: {
               </TouchableOpacity>
 
               <TouchableOpacity
-                 style={[
-                  styles.iconWrapper,
-                  isBuffalo && styles.selected,
-                ]}
+                style={[styles.iconWrapper, isBuffalo && styles.selected]}
                 onPress={() => setIsBuffalo(true)}
               >
                 <Image
@@ -343,22 +303,6 @@ const AddEntryAndSale = (props: {
             </View>
 
             <View style={[styles.stockContainer, { height: 50 }]}>
-              {props.userType === 'farmer' && (
-                <View style={styles.inputBox}>
-                  <TextInput
-                    editable
-                    multiline
-                    numberOfLines={4}
-                    maxLength={40}
-                    onChangeText={text =>
-                      setMilkEntry(prev => ({ ...prev, fat: text }))
-                    }
-                    value={milkEntry.fat}
-                    style={styles.textInput}
-                    placeholder="Fat"
-                  />
-                </View>
-              )}
               <View
                 style={[
                   styles.inputBox,
@@ -378,6 +322,22 @@ const AddEntryAndSale = (props: {
                   placeholder="Weight"
                 />
               </View>
+              {props.userType === 'farmer' && (
+                <View style={styles.inputBox}>
+                  <TextInput
+                    editable
+                    multiline
+                    numberOfLines={4}
+                    maxLength={40}
+                    onChangeText={text =>
+                      setMilkEntry(prev => ({ ...prev, fat: text }))
+                    }
+                    value={milkEntry.fat}
+                    style={styles.textInput}
+                    placeholder="Fat"
+                  />
+                </View>
+              )}
             </View>
 
             <View style={[styles.stockContainer, { height: 50 }]}>
@@ -471,8 +431,6 @@ const AddEntryAndSale = (props: {
                       </View>
                     </View>
                   </Modal>
-
-                  {/* <ConfirmButton disabled={state === "spinning"} /> */}
                 </View>
               </TouchableOpacity>
               <View
@@ -498,10 +456,7 @@ const AddEntryAndSale = (props: {
         animationType="fade"
         transparent={true}
         visible={bottomSheetSale}
-        onRequestClose={() => {
-          // Alert.alert('Modal has been closed.');
-          // setModalVisible(!modalVisible);
-        }}
+        onRequestClose={() => {}}
         style={{
           flex: 1,
           display: 'flex',
@@ -513,35 +468,14 @@ const AddEntryAndSale = (props: {
         }}
       >
         <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <View
-              style={{
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: 10,
-              }}
-            >
-              <Text style={{ color: '#333', fontSize: 20 }}>Sale Product</Text>
+          <View style={[styles.modalView, { padding: 20 }]}>
+            <View style={{ width: '100%', alignSelf: 'flex-end', padding: 10 }}>
               <FeIcon
                 name="x"
                 size={26}
                 color="#333"
                 onPress={() => {
                   setBottomSheetSale(false);
-                  // setBottomSheetIndex(false);
-                  // setIsEditStock(false);
-                  // setStockName('');
-                  // setStockPrice('');
-                  // setStockQuantity('');
-                  // setSelectedStock({
-                  //   item: '',
-                  //   quantity: 0,
-                  //   _id: '',
-                  //   price: 0,
-                  // });
                 }}
               />
             </View>
@@ -553,69 +487,41 @@ const AddEntryAndSale = (props: {
                 flexDirection: 'row',
                 alignItems: 'flex-start',
                 justifyContent: 'space-around',
+                gap: 10,
               }}
             >
-              <View
-                style={{
-                  width: '40%',
-                  position: 'relative',
-                  zIndex: 20, // IMPORTANT if multiple dropdowns exist
-                }}
-              >
-                <SelectList
-                  setSelected={(val: any) => {
-                    setSelected(val);
-                  }}
-                  data={
-                    stocks.map((stk: any) => ({
+              <View style={{ width: '50%' }}>
+                <View style={{ zIndex: 1000 }}>
+                  <SelectList
+                    setSelected={(val: string) => setSelected(val)}
+                    data={stocks.map((stk: any) => ({
                       key: stk._id,
                       value: stk.item,
-                    })) || []
-                  }
-                  save="key"
-                  placeholder="Select Item"
-                  search={false}
-                  /* ===== Input Box ===== */
-                  boxStyles={{
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: '#5086E7',
-                    backgroundColor: '#fff',
-                    height: 42,
-                    justifyContent: 'space-between',
-                  }}
-                  inputStyles={{
-                    color: '#333',
-                    fontSize: 14,
-                    fontWeight: '500',
-                  }}
-                  /* ===== Dropdown (Floating) ===== */
-                  dropdownStyles={{
-                    position: 'absolute', // 🔥 FIX
-                    top: 40, // opens below input
-                    width: '100%',
-                    maxHeight: 150,
-                    backgroundColor: '#fff',
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: '#5086E7',
-                    shadowColor: '#000',
-                    shadowOpacity: 0.15,
-                    shadowRadius: 6,
-                    elevation: 5,
-                    zIndex: 999,
-                  }}
-                  dropdownItemStyles={{
-                    paddingVertical: 4,
-                    paddingHorizontal: 10,
-                  }}
-                  dropdownTextStyles={{
-                    fontSize: 14,
-                    color: '#333',
-                  }}
-                />
+                    }))}
+                    save="key"
+                    boxStyles={{
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: '#5086E7',
+                      backgroundColor: '#fff',
+                      height: 42,
+                    }}
+                    dropdownStyles={{
+                      width: '100%',
+                      maxHeight: 100,
+                      backgroundColor: '#fff',
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: '#5086E7',
+                      elevation: 6,
+                    }}
+                    dropdownItemStyles={{
+                      paddingVertical: 10,
+                      paddingHorizontal: 12,
+                    }}
+                  />
+                </View>
               </View>
-
               <View style={styles.inputBox}>
                 <TextInput
                   editable
@@ -628,12 +534,120 @@ const AddEntryAndSale = (props: {
                   placeholder="Quantity"
                 />
               </View>
-              <Icon
-                name="add-circle-outline"
-                size={34}
-                color="#5086E7"
-                onPress={saleProduct}
-              />
+            </View>
+            <View style={[styles.stockContainer, { height: 50 }]}>
+              <TouchableOpacity
+                style={styles.inputBox}
+                onPress={() => setOpen(true)}
+              >
+                <View>
+                  <TextInput
+                    editable={false}
+                    value={saleDate.toDateString()}
+                    onChangeText={() => {}} // ❌ ignores input
+                    style={styles.textInput}
+                    placeholder="sale Date"
+                  />
+                  <Modal visible={open} transparent animationType="fade">
+                    <View
+                      style={{
+                        flex: 1,
+                        backgroundColor: 'rgba(0,0,0,0.4)',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <View
+                        style={{
+                          backgroundColor: '#fff',
+                          borderRadius: 12,
+                          padding: 16,
+                          width: '90%',
+                        }}
+                      >
+                        <DatePicker
+                          date={saleDate}
+                          onDateChange={setSaleDate}
+                          mode="datetime"
+                        />
+
+                        {/* Buttons */}
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            justifyContent: 'space-around',
+                            marginTop: 12,
+                          }}
+                        >
+                          <TouchableOpacity
+                            onPress={() => setOpen(false)}
+                            style={{
+                              paddingVertical: 10,
+                              paddingHorizontal: 16,
+                              marginRight: 10,
+                              borderWidth: 1,
+                              borderColor: '#5086E7',
+                              width: '30%',
+                              borderRadius: 10,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: '#999',
+                                fontWeight: '600',
+                                textAlign: 'center',
+                              }}
+                            >
+                              Cancel
+                            </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            onPress={() => setOpen(false)}
+                            style={{
+                              paddingVertical: 10,
+                              paddingHorizontal: 16,
+                              backgroundColor: '#5086E7',
+                              width: '30%',
+                              borderRadius: 10,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: '#fff',
+                                fontWeight: '600',
+                                textAlign: 'center',
+                              }}
+                            >
+                              Done
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </View>
+                  </Modal>
+                </View>
+              </TouchableOpacity>
+              <View
+                style={[
+                  styles.inputBox,
+                  {
+                    backgroundColor: '#5086E7',
+                    width: '45%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  },
+                ]}
+              >
+                <TouchableOpacity onPress={saleProduct}>
+                  <Text
+                    style={{ fontSize: 16, color: '#fff', fontWeight: 700 }}
+                  >
+                    Sale
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </View>
@@ -652,8 +666,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    // height: 100,
-    // flex:1
   },
   btn: {
     width: '30%',
@@ -671,8 +683,6 @@ const styles = StyleSheet.create({
     height: 100,
     display: 'flex',
     flexDirection: 'row',
-    // gap: 10,
-    // margin: 10,
     alignItems: 'center',
     justifyContent: 'space-around',
   },
@@ -689,9 +699,7 @@ const styles = StyleSheet.create({
   textInput: {
     padding: 10,
   },
-  bottomSheetAdd: {
-    // height:200,
-  },
+  bottomSheetAdd: {},
   button: {
     width: '30%',
     borderWidth: 1,
@@ -740,7 +748,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 40,
     flexDirection: 'row',
-    // alignItems: "center",
     justifyContent: 'flex-start',
     alignSelf: 'flex-start',
     gap: 10,

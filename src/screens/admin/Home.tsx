@@ -1,23 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import { BASE_URL } from '../../../token/tokenStorage';
 import { Table, Row, Rows } from 'react-native-table-component';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
+import { formatDate } from '../../../utility/helperFunctions';
 
 const Home = () => {
   const firm = useSelector((state: any) => state.firm.value);
   const [allEntries, setAllEntries] = useState<
     {
       name: string;
+      userCode: string;
       fat: number;
       weight: number;
+      amount: number;
       timeZone: string;
       date: Date;
     }[]
@@ -25,8 +22,6 @@ const Home = () => {
   const [totalWeight, setTotalWeight] = useState<number>(200);
   const [avgFat, setAvgFat] = useState<number>(75);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  console.log('allEntries : ', allEntries);
 
   useEffect(() => {
     if (firm.id) {
@@ -36,25 +31,45 @@ const Home = () => {
 
   const state = {
     tableHead: [
-      <Text style={{ textAlign: 'center', fontWeight: 700 }}>Date</Text>,
-      <Text style={{ textAlign: 'center', fontWeight: 700 }}>Name</Text>,
-      <Text style={{ textAlign: 'center', fontWeight: 700 }}>Wieght</Text>,
-      <Text style={{ textAlign: 'center', fontWeight: 700 }}>FAT</Text>,
-      <Text style={{ textAlign: 'center', fontWeight: 700 }}>Time</Text>,
+      <Text style={{ textAlign: 'center', fontWeight: 700, fontSize: 12 }}>
+        Date
+      </Text>,
+      <Text style={{ textAlign: 'center', fontWeight: 700, fontSize: 12 }}>
+        Usercode
+      </Text>,
+      <Text style={{ textAlign: 'center', fontWeight: 700, fontSize: 12 }}>
+        Name
+      </Text>,
+      <Text style={{ textAlign: 'center', fontWeight: 700, fontSize: 12 }}>
+        Wieght
+      </Text>,
+      <Text style={{ textAlign: 'center', fontWeight: 700, fontSize: 12 }}>
+        FAT
+      </Text>,
+      <Text style={{ textAlign: 'center', fontWeight: 700, fontSize: 12 }}>
+        Amount
+      </Text>
     ],
     tableData: allEntries.map((ent: any, i: number) => {
       return [
-        <Text style={{ textAlign: 'center', padding: 3 }}>
-          {new Date(ent.date).toLocaleDateString('en-US', {
-            month: '2-digit',
-            day: '2-digit',
-            year: '2-digit',
-          })}
+        <Text style={{ textAlign: 'center', padding: 3, fontSize: 12 }}>
+          {formatDate(new Date(ent.date))} {ent.timeZone}
         </Text>,
-        <Text style={{ textAlign: 'center', padding: 3 }}>{ent.name}</Text>,
-        <Text style={{ textAlign: 'center', padding: 3 }}>{ent.weight}</Text>,
-        <Text style={{ textAlign: 'center', padding: 3 }}>{ent.fat}</Text>,
-        <Text style={{ textAlign: 'center', padding: 3 }}>{ent.timeZone}</Text>,
+        <Text style={{ textAlign: 'center', fontWeight: 700, fontSize: 12 }}>
+          {ent.userCode}
+        </Text>,
+        <Text style={{ textAlign: 'center', padding: 3, fontSize: 12 }}>
+          {ent.name}
+        </Text>,
+        <Text style={{ textAlign: 'center', padding: 3, fontSize: 12 }}>
+          {ent.weight}
+        </Text>,
+        <Text style={{ textAlign: 'center', padding: 3, fontSize: 12 }}>
+          {ent.fat}
+        </Text>,
+        <Text style={{ textAlign: 'center', padding: 3, fontSize: 12 }}>
+          {Number(ent.amount).toFixed(2)}
+        </Text>
       ];
     }),
   };
@@ -69,22 +84,21 @@ const Home = () => {
     })
       .then(async (res: any) => {
         const { data } = await res.json();
-        console.log('data : ', data);
 
         const filteredData = data
           .filter((ent: any) => ent.customer.userType === 'farmer')
           .map((ent: any) => ({
             name: ent.customer.name,
             fat: ent.fat,
+            userCode: ent.customer.userCode,
             weight: ent.weight,
             timeZone: ent.timeZone,
+            amount: ent.amount,
             date: ent.date,
           }));
-        console.log('filteredData : ', filteredData);
 
         setAllEntries(filteredData);
 
-        //calculate total weight milk of today
         const todayTotalWeight = filteredData.reduce(
           (acc: number, curr: any) => {
             acc += curr.weight;
@@ -111,6 +125,8 @@ const Home = () => {
           setAvgFat(0);
         }
         setIsLoading(false);
+        
+        
       })
       .catch((e: any) => {
         console.log(e);
@@ -122,12 +138,11 @@ const Home = () => {
   }
   return (
     <View style={styles.container}>
-      {/* <Text style={styles.heading}>Analytics Board</Text> */}
       <View style={styles.cardsContainer}>
         <View style={styles.totalWeight}>
           <Text style={styles.cardText}>Total Weight</Text>
           <Text style={{ ...styles.cardText, fontSize: 18, fontWeight: 700 }}>
-            {totalWeight}L
+            {totalWeight.toFixed(2)}L
           </Text>
         </View>
         <View style={styles.avgFat}>
@@ -136,12 +151,6 @@ const Home = () => {
             {Number(avgFat)}%
           </Text>
         </View>
-        {/* <View style={styles.earnings}>
-          <Text style={styles.cardText3}>Today Earnings</Text>
-          <Text style={{ ...styles.cardText3, fontSize: 18, fontWeight: 700 }}>
-            {todayEarnings}
-          </Text>
-        </View> */}
       </View>
       <ScrollView style={styles.container}>
         <Table borderStyle={{ borderWidth: 2, borderColor: '#81bce6ff' }}>
