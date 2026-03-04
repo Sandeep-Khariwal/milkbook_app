@@ -180,7 +180,7 @@ const ShowAllHistory = ({ route }: { route: any }) => {
           amount: history.amount,
           userType: userType,
         };
-        const res = await fetch(`${BASE_URL}/history/delete/${history._id}`, {
+        const res = await fetch(`${BASE_URL}/history/delete/${history._id}?month=12`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -249,7 +249,6 @@ const ShowAllHistory = ({ route }: { route: any }) => {
   const renderItem = ({ item }: any) => {
     return (
       <View style={styles.card}>
-        {item.productName && (
           <View style={styles.row}>
             <Text style={styles.productName}>{item.productName}</Text>
 
@@ -263,6 +262,8 @@ const ShowAllHistory = ({ route }: { route: any }) => {
                 gap: 10,
               }}
             >
+               {item.productName && ( 
+
               <FeIcon
                 name="edit"
                 size={20}
@@ -273,6 +274,7 @@ const ShowAllHistory = ({ route }: { route: any }) => {
                   setSelectedHistory(item);
                 }}
               />
+               )}
 
               <FeIcon
                 name="trash-2"
@@ -284,7 +286,6 @@ const ShowAllHistory = ({ route }: { route: any }) => {
               />
             </View>
           </View>
-        )}
 
         <View style={styles.row}>
           <Text style={styles.label}>Customer:</Text>

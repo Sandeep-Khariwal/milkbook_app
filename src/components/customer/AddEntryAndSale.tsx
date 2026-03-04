@@ -33,6 +33,10 @@ const AddEntryAndSale = (props: {
   const [bottomSheetAdd, setBottomSheetAdd] = useState<boolean>(false);
   const [bottomSheetSale, setBottomSheetSale] = useState<boolean>(false);
 
+  const weightRef = useRef(null);
+  const fatRef = useRef(null);
+  const snfRef = useRef(null);
+
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [milkEntry, setMilkEntry] = useState<{
     fat: string;
@@ -133,6 +137,7 @@ const AddEntryAndSale = (props: {
       firm: firm.id,
       date: date,
       _id: milkEntry._id,
+      isBuffalo: isBuffalo,
     };
 
     setIsLoading(true);
@@ -145,7 +150,6 @@ const AddEntryAndSale = (props: {
       body: JSON.stringify(payload),
     })
       .then(async (res: any) => {
-        const { data } = await res.json();
         setIsLoading(false);
 
         setMilkEntry({
@@ -204,7 +208,6 @@ const AddEntryAndSale = (props: {
         const data = await res.json();
         setSelected('');
         setSelectedQuantity('');
-        console.log('res : ', data);
         setIsLoading(false);
         Toast.show({
           type: ALERT_TYPE.SUCCESS,
@@ -282,16 +285,6 @@ const AddEntryAndSale = (props: {
 
             <View style={styles.IconContainer}>
               <TouchableOpacity
-                style={[styles.iconWrapper, !isBuffalo && styles.selected]}
-                onPress={() => setIsBuffalo(false)}
-              >
-                <Image
-                  source={require('../../assets/cow.png')}
-                  style={styles.icon}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
                 style={[styles.iconWrapper, isBuffalo && styles.selected]}
                 onPress={() => setIsBuffalo(true)}
               >
@@ -300,10 +293,22 @@ const AddEntryAndSale = (props: {
                   style={styles.icon}
                 />
               </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.iconWrapper, !isBuffalo && styles.selected]}
+                onPress={() => setIsBuffalo(false)}
+              >
+                <Image
+                  source={require('../../assets/cow.png')}
+                  style={styles.icon}
+                />
+              </TouchableOpacity>
             </View>
 
-            <View style={[styles.stockContainer, { height: 50 }]}>
-              <View
+            <View
+              style={[styles.stockContainer, { height: 50, marginTop: 10 }]}
+            >
+              <TouchableOpacity
+                onPress={() => weightRef.current?.focus()}
                 style={[
                   styles.inputBox,
                   { width: props.userType === 'farmer' ? '45%' : '95%' },
@@ -311,6 +316,7 @@ const AddEntryAndSale = (props: {
               >
                 <TextInput
                   editable
+                  ref={weightRef}
                   multiline
                   numberOfLines={4}
                   maxLength={40}
@@ -321,7 +327,7 @@ const AddEntryAndSale = (props: {
                   style={styles.textInput}
                   placeholder="Weight"
                 />
-              </View>
+              </TouchableOpacity>
               {props.userType === 'farmer' && (
                 <View style={styles.inputBox}>
                   <TextInput
@@ -698,6 +704,8 @@ const styles = StyleSheet.create({
   },
   textInput: {
     padding: 10,
+    flex: 1,
+    width: '100%',
   },
   bottomSheetAdd: {},
   button: {
@@ -746,16 +754,16 @@ const styles = StyleSheet.create({
 
   IconContainer: {
     width: '100%',
-    height: 40,
+    height: 50,
     flexDirection: 'row',
     justifyContent: 'flex-start',
     alignSelf: 'flex-start',
-    gap: 10,
+    gap: 15,
     marginLeft: 12,
   },
   iconWrapper: {
-    width: 40,
-    height: 40,
+    width: 50,
+    height: 50,
     borderRadius: 35,
     borderWidth: 2,
     borderColor: '#ccc',
@@ -764,8 +772,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   icon: {
-    width: 30,
-    height: 30,
+    width: 40,
+    height: 40,
     resizeMode: 'contain',
   },
   selected: {

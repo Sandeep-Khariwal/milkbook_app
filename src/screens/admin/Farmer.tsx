@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -12,7 +13,7 @@ import { BASE_URL } from '../../../token/tokenStorage';
 import { useSelector } from 'react-redux';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import FaIcon from 'react-native-vector-icons/Ionicons';
 import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
@@ -47,6 +48,7 @@ const Farmers = () => {
       cowRate: string;
       phoneNumber: string;
       userCode: string;
+      milkUpdated: boolean;
       _id: string;
     }[]
   >([]);
@@ -57,6 +59,7 @@ const Farmers = () => {
       cowRate: string;
       phoneNumber: string;
       userCode: string;
+      milkUpdated: boolean;
       _id: string;
     }[]
   >([]);
@@ -84,13 +87,11 @@ const Farmers = () => {
   });
 
   const [isEditFarmer, setIsEditFarmer] = useState<boolean>(false);
-
+  const isFocused = useIsFocused();
   useEffect(() => {
     getFarmers();
-  }, []);
-  if (isLoading) {
-    return <LoadingOverlay visible={isLoading} />;
-  }
+  }, [isFocused]);
+
   const getFarmers = async () => {
     setIsLoading(true);
     await fetch(`${BASE_URL}/user/getAllFarmers/${firm.id}`, {
@@ -102,12 +103,14 @@ const Farmers = () => {
       .then(async (res: any) => {
         const { users } = await res.json();
         const data = users.map((u: any) => {
+          const usr = u;
           return {
-            ...u,
-            cowRate: String(u.cowRate),
-            buffaloRate: String(u.buffaloRate),
+            ...usr,
+            cowRate: String(usr.cowRate),
+            buffaloRate: String(usr.buffaloRate),
           };
         });
+
         setAllFarmer(data);
         setAllShowFarmer(data);
         setIsLoading(false);
@@ -144,7 +147,6 @@ const Farmers = () => {
       userType: 'farmer',
       firmId: firm.id,
     };
-
     await fetch(`${BASE_URL}/user/create`, {
       method: 'POST',
       headers: {
@@ -197,8 +199,7 @@ const Farmers = () => {
       },
     })
       .then(async (res: any) => {
-        await res.json();
-        setAllFarmer(prev => prev.filter(c => c._id !== selectedFarmer._id));
+        getFarmers();
       })
       .catch((e: any) => {
         console.log(e);
@@ -208,11 +209,11 @@ const Farmers = () => {
     bottomSheetRefDelete.current?.close();
   };
 
-  const filterFarmer = () => {
+  useEffect(() => {
     if (!query) {
       setAllShowFarmer(allFarmer);
     } else {
-      const filteredData = allShowFarmer.filter(
+      const filteredData = allFarmer.filter(
         (cust: any) =>
           String(cust.name)
             .toLocaleLowerCase()
@@ -223,7 +224,7 @@ const Farmers = () => {
       );
       setAllShowFarmer(filteredData);
     }
-  };
+  }, [query, allFarmer]);
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.container}>
@@ -251,67 +252,84 @@ const Farmers = () => {
             placeholder="Search farmers..."
           />
         </View>
-        <FaIcon name="search" size={30} onPress={filterFarmer} />
+        {/* <FaIcon name="search" size={30} onPress={filterFarmer} /> */}
       </View>
-      <View style={styles.stocksContainer}>
-        {allShowFarmer.length > 0 ? (
-          allShowFarmer.map((Farmer: any, index: number) => (
-            <TouchableOpacity
-              onPress={() =>
-                navigation.navigate('FarmerPage', {
-                  id: Farmer._id,
-                  userType: 'farmer',
-                })
-              }
-              key={Farmer._id ?? index}
-              style={styles.cardContainer}
-            >
-              <View style={styles.cardOne}>
-                <Text
-                  style={{ fontSize: 17, fontWeight: 700, color: '#5086E7' }}
-                >
-                  {Farmer.name} ({Farmer.userCode})
-                </Text>
-              </View>
-              <View style={styles.cardTwo}>
-                <Icon
-                  name="edit"
-                  size={26}
-                  color="#333"
-                  onPress={() => {
-                    setIsEditFarmer(true);
-                    setBottomSheetIndex(true);
 
-                    setSelectedFarmer(Farmer);
-                    setFarmer(Farmer);
-                  }}
-                />
-                <Icon
-                  name="trash-2"
-                  size={24}
-                  color="#FF0000"
-                  onPress={() => {
-                    setBottomSheetDeleteIndex(true), setSelectedFarmer(Farmer);
-                  }}
-                />
-              </View>
-            </TouchableOpacity>
-          ))
-        ) : (
-          <View
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ fontSize: 18, color: '#8e8e98ff' }}>
-              No Farmers created yet
-            </Text>
-          </View>
-        )}
-      </View>
+      {isLoading && <LoadingOverlay visible />}
+
+      {!isLoading && allShowFarmer.length === 0 && (
+        <Text style={{ textAlign: 'center', marginTop: 20 }}>No data</Text>
+      )}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 38 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.stocksContainer, { paddingBottom: 38 }]}>
+          {allShowFarmer.length > 0 ? (
+            allShowFarmer.map((Farmer: any, index: number) => (
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate('FarmerPage', {
+                    id: Farmer._id,
+                    userType: 'farmer',
+                  })
+                }
+                key={Farmer._id ?? index}
+                style={styles.cardContainer}
+              >
+                <View style={styles.cardOne}>
+                  <Text
+                    style={{
+                      fontSize: 17,
+                      fontWeight: 700,
+                      color: !Farmer.milkUpdated ? '#e54646' : '#0d8e1e',
+                    }}
+                  >
+                    {Farmer.name} ({Farmer.userCode})
+                  </Text>
+                </View>
+                <View style={styles.cardTwo}>
+                  <Icon
+                    name="edit"
+                    size={26}
+                    color="#333"
+                    onPress={() => {
+                      setIsEditFarmer(true);
+                      setBottomSheetIndex(true);
+
+                      setSelectedFarmer(Farmer);
+                      setFarmer(Farmer);
+                    }}
+                  />
+                  <Icon
+                    name="trash-2"
+                    size={24}
+                    color="#FF0000"
+                    onPress={() => {
+                      setBottomSheetDeleteIndex(true),
+                        setSelectedFarmer(Farmer);
+                    }}
+                  />
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 18, color: '#8e8e98ff' }}>
+                No Farmers created yet
+              </Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
 
       <View style={styles.ButtonBox}>
         <TouchableOpacity
@@ -399,19 +417,6 @@ const Farmers = () => {
               </View>
             </View>
             <View style={styles.stockContainer}>
-              <View style={styles.inputBox}>
-                <TextInput
-                  editable
-                  multiline
-                  numberOfLines={4}
-                  onChangeText={text =>
-                    setFarmer(prev => ({ ...prev, cowRate: text }))
-                  }
-                  value={Farmer.cowRate}
-                  style={styles.textInput}
-                  placeholder="Cow Rate"
-                />
-              </View>
               <View style={[styles.inputBox]}>
                 <TextInput
                   editable
@@ -425,12 +430,25 @@ const Farmers = () => {
                   placeholder="Buffalo Rate"
                 />
               </View>
+              <View style={styles.inputBox}>
+                <TextInput
+                  editable
+                  multiline
+                  numberOfLines={4}
+                  onChangeText={text =>
+                    setFarmer(prev => ({ ...prev, cowRate: text }))
+                  }
+                  value={Farmer.cowRate}
+                  style={styles.textInput}
+                  placeholder="Cow Rate"
+                />
+              </View>
             </View>
             <View style={styles.stockContainer}>
               <View
                 style={[
                   styles.inputBox,
-                  { width: isEditFarmer ? '100%' : '50%' },
+                  { width:  '50%' },
                 ]}
               >
                 <TextInput
@@ -446,7 +464,6 @@ const Farmers = () => {
                   placeholder="Code"
                 />
               </View>
-              {!isEditFarmer && (
                 <View style={styles.inputBox}>
                   <TextInput
                     editable
@@ -461,7 +478,6 @@ const Farmers = () => {
                     placeholder="Enter Password"
                   />
                 </View>
-              )}
             </View>
 
             <View style={styles.stockContainer}>

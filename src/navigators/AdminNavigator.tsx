@@ -53,7 +53,7 @@ function CustomDrawerContent(props: any) {
     setFirmDetail(prev => ({ ...prev, name: firm.name }));
   }, [firm]);
 
-  if (isLoading) return <LoadingOverlay visible />;
+  // if (isLoading) return <LoadingOverlay visible />;
 
   const EditFirm = async () => {
     setIsLoading(true);
@@ -88,129 +88,136 @@ function CustomDrawerContent(props: any) {
   };
 
   return (
-    <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1 }}>
-      <View
-        style={{
-          paddingTop: 10,
-          paddingBottom: 20,
-          height: 80,
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Text
+    <>
+      {isLoading && <LoadingOverlay visible />}
+      <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1 }}>
+        <View
           style={{
-            fontSize: 24,
-            color: '#5086E7',
-            fontWeight: 500,
-            textAlign: 'center',
+            paddingTop: 10,
+            paddingBottom: 20,
+            height: 80,
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
-          {firm.name}
-        </Text>
-        <AntDIcon name="setting" size={26} onPress={() => setOpenModal(true)} />
-      </View>
-      <Modal
-        visible={openModal}
-        transparent
-        animationType="fade"
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'red',
-          alignSelf: 'center',
-        }}
-      >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <View
-              style={{
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <Text style={{ color: '#333', fontSize: 24 }}>Edit Firm</Text>
-              <FeIcon
-                name="x"
-                size={26}
-                color="#333"
-                onPress={() => {
-                  setOpenModal(false);
-                }}
-              />
-            </View>
-
-            <View
-              style={{
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginTop: 20,
-              }}
-            >
-              <View style={styles.inputBox}>
-                <TextInput
-                  editable
-                  multiline
-                  numberOfLines={4}
-                  maxLength={40}
-                  onChangeText={text =>
-                    setFirmDetail(prev => ({ ...prev, name: text }))
-                  }
-                  value={firmDetails.name}
-                  style={styles.textInput}
-                  placeholder="Firm Name"
-                />
-              </View>
-              <View style={styles.inputBox}>
-                <TextInput
-                  editable
-                  multiline
-                  numberOfLines={4}
-                  maxLength={40}
-                  onChangeText={text =>
-                    setFirmDetail(prev => ({ ...prev, password: text }))
-                  }
-                  value={firmDetails.password}
-                  style={styles.textInput}
-                  placeholder="New Password"
-                />
-              </View>
-            </View>
-            <View style={[styles.stockContainer, { height: 50 }]}>
+          <Text
+            style={{
+              fontSize: 24,
+              color: '#5086E7',
+              fontWeight: 500,
+              textAlign: 'center',
+            }}
+          >
+            {firm.name}
+          </Text>
+          <AntDIcon
+            name="setting"
+            size={26}
+            onPress={() => setOpenModal(true)}
+          />
+        </View>
+        <Modal
+          visible={openModal}
+          transparent
+          animationType="fade"
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'red',
+            alignSelf: 'center',
+          }}
+        >
+          <View style={styles.centeredView}>
+            <View style={styles.modalView}>
               <View
-                style={[
-                  styles.inputBox,
-                  { backgroundColor: '#5086E7', width: '95%', marginTop: 10 },
-                ]}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
               >
-                <TouchableOpacity onPress={EditFirm}>
-                  <Text
-                    style={{ fontSize: 16, color: '#fff', fontWeight: 700 }}
-                  >
-                    Edit Firm
-                  </Text>
-                </TouchableOpacity>
+                <Text style={{ color: '#333', fontSize: 24 }}>Edit Firm</Text>
+                <FeIcon
+                  name="x"
+                  size={26}
+                  color="#333"
+                  onPress={() => {
+                    setOpenModal(false);
+                  }}
+                />
+              </View>
+
+              <View
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginTop: 20,
+                }}
+              >
+                <View style={styles.inputBox}>
+                  <TextInput
+                    editable
+                    multiline
+                    numberOfLines={4}
+                    maxLength={40}
+                    onChangeText={text =>
+                      setFirmDetail(prev => ({ ...prev, name: text }))
+                    }
+                    value={firmDetails.name}
+                    style={styles.textInput}
+                    placeholder="Firm Name"
+                  />
+                </View>
+                <View style={styles.inputBox}>
+                  <TextInput
+                    editable
+                    multiline
+                    numberOfLines={4}
+                    maxLength={40}
+                    onChangeText={text =>
+                      setFirmDetail(prev => ({ ...prev, password: text }))
+                    }
+                    value={firmDetails.password}
+                    style={styles.textInput}
+                    placeholder="New Password"
+                  />
+                </View>
+              </View>
+              <View style={[styles.stockContainer, { height: 50 }]}>
+                <View
+                  style={[
+                    styles.inputBox,
+                    { backgroundColor: '#5086E7', width: '95%', marginTop: 10 },
+                  ]}
+                >
+                  <TouchableOpacity onPress={EditFirm}>
+                    <Text
+                      style={{ fontSize: 16, color: '#fff', fontWeight: 700 }}
+                    >
+                      Edit Firm
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </View>
+        </Modal>
+        <DrawerItemList {...props} />
+        <View style={{ width: '100%', flex: 1, marginTop: 20 }}>
+          <LogoutButton showText={true} />
         </View>
-      </Modal>
-      <DrawerItemList {...props} />
-      <View style={{ width: '100%', flex: 1, marginTop: 20 }}>
-        <LogoutButton showText={true} />
-      </View>
-    </DrawerContentScrollView>
+      </DrawerContentScrollView>
+    </>
   );
 }
 

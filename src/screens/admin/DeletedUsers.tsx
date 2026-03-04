@@ -1,17 +1,29 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import MaIcon from 'react-native-vector-icons/MaterialIcons';
 import { BASE_URL } from '../../../token/tokenStorage';
 import { useSelector } from 'react-redux';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FaIcon from 'react-native-vector-icons/Ionicons';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
+import Icon from 'react-native-vector-icons/Feather';
+import { useIsFocused } from '@react-navigation/native';
 
 const DeletedUsers = () => {
   const [query, setQuery] = useState<string>('');
   const firm = useSelector((state: any) => state.firm.value);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [bottomSheetDeleteIndex, setBottomSheetDeleteIndex] =
+    useState<boolean>(false);
   const [allCustomer, setAllCustomer] = useState<
     {
       name: string;
@@ -33,13 +45,29 @@ const DeletedUsers = () => {
     }[]
   >([]);
 
+  const [selectedFarmer, setSelectedFarmer] = useState<{
+    name: string;
+    phoneNumber: string;
+    userCode: string;
+    buffaloRate: number;
+    cowRate: number;
+    _id: string;
+  }>({
+    name: '',
+    phoneNumber: '',
+    _id: '',
+    buffaloRate: 0,
+    cowRate: 0,
+    userCode: '',
+  });
+    const isFocused = useIsFocused();
   useEffect(() => {
-    getCustomers();
-  }, []);
+    getDeletedUser();
+  }, [isFocused]);
   if (isLoading) {
     return <LoadingOverlay visible={isLoading} />;
   }
-  const getCustomers = async () => {
+  const getDeletedUser = async () => {
     setIsLoading(true);
     await fetch(`${BASE_URL}/user/getDeletedUser/${firm.id}`, {
       method: 'GET',
@@ -93,11 +121,28 @@ const DeletedUsers = () => {
     })
       .then((res: any) => {
         setIsLoading(false);
-        getCustomers();
+        getDeletedUser();
       })
       .catch((e: any) => {
         console.log(e);
       });
+  };
+
+  const DeleteFarmers = async () => {
+    await fetch(`${BASE_URL}/user/deleteFromDb/${selectedFarmer._id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(async (res: any) => {
+        getDeletedUser();
+      })
+      .catch((e: any) => {
+        console.log(e);
+      });
+
+    setBottomSheetDeleteIndex(false);
   };
 
   return (
@@ -128,44 +173,105 @@ const DeletedUsers = () => {
         </View>
         <FaIcon name="search" size={30} onPress={filterCustomer} />
       </View>
-      <View style={styles.stocksContainer}>
-        {allShowCustomer.length > 0 ? (
-          allShowCustomer.map((customer: any, index: number) => (
-            <View key={customer._id ?? index} style={styles.cardContainer}>
-              <View style={styles.cardOne}>
-                <Text
-                  style={{ fontSize: 17, fontWeight: 700, color: '#5086E7' }}
-                >
-                  {customer.name} ({customer.userCode})
-                </Text>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 38 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.stocksContainer}>
+          {allShowCustomer.length > 0 ? (
+            allShowCustomer.map((customer: any, index: number) => (
+              <View key={customer._id ?? index} style={styles.cardContainer}>
+                <View style={styles.cardOne}>
+                  <Text
+                    style={{ fontSize: 17, fontWeight: 700, color: '#5086E7' }}
+                  >
+                    {customer.name} ({customer.userCode})
+                  </Text>
+                </View>
+                <View style={styles.cardTwo}>
+                  <MaIcon
+                    name="restore"
+                    size={26}
+                    color="#333"
+                    onPress={() => {
+                      restoreUser(customer._id);
+                    }}
+                  />
+                  <Icon
+                    name="trash-2"
+                    size={24}
+                    color="#FF0000"
+                    onPress={() => {
+                      setBottomSheetDeleteIndex(true),
+                        setSelectedFarmer(customer);
+                    }}
+                  />
+                </View>
               </View>
-              <View style={styles.cardTwo}>
-                <MaIcon
-                  name="restore"
-                  size={26}
-                  color="#333"
-                  onPress={() => {
-                    restoreUser(customer._id);
-                  }}
-                />
+            ))
+          ) : (
+            <View
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 18, color: '#8e8e98ff' }}>
+                No Users Deleted yet
+              </Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={bottomSheetDeleteIndex}
+        onRequestClose={() => {}}
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          alignSelf: 'center',
+        }}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <View>
+              <Text
+                style={{
+                  fontSize: 18,
+                  color: '#8e8e98ff',
+                  textAlign: 'center',
+                }}
+              >
+                Are you sure?. you want to delete this Farmer
+              </Text>
+
+              <View style={styles.formBox}>
+                <TouchableOpacity
+                  style={styles.deletebutton}
+                  onPress={() => setBottomSheetDeleteIndex(false)}
+                >
+                  <Text style={{ color: '#5086E7' }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.deletebuttonYes}
+                  onPress={DeleteFarmers}
+                >
+                  <Text style={{ color: '#fff' }}>Yes</Text>
+                </TouchableOpacity>
               </View>
             </View>
-          ))
-        ) : (
-          <View
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ fontSize: 18, color: '#8e8e98ff' }}>
-              No Users Deleted yet
-            </Text>
           </View>
-        )}
-      </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };

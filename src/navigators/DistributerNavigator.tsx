@@ -44,7 +44,6 @@ export default function DistributerNavigator() {
 const AllCustomers = () => {
   const distributer = useSelector((state: any) => state.distributer.value);
   const firm = useSelector((state: any) => state.firm.value);
-  console.log('distributer : ', distributer);
   const [showLogout, setShowLogout] = useState<boolean>(false);
   const dispatch = useDispatch();
 

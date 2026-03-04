@@ -19,6 +19,7 @@ import FeIcon from 'react-native-vector-icons/Feather';
 import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import EntriesTable from '../customers/EntriesTable';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
+import DatePicker from 'react-native-date-picker';
 
 const FarmerHome = ({ route }: { route: any }) => {
   const id = route.params.id;
@@ -56,6 +57,8 @@ const FarmerHome = ({ route }: { route: any }) => {
   const [cashPayment, setCashPayment] = useState<string>('');
   const [cashPaymentDescription, setCashPaymentDescription] =
     useState<string>('');
+  const [open, setOpen] = useState<boolean>(false);
+  const [date, setDate] = useState<Date>(new Date());
 
   useEffect(() => {
     getUser();
@@ -82,7 +85,7 @@ const FarmerHome = ({ route }: { route: any }) => {
           name: user.name,
           userCode: user.userCode,
           buffaloRate: user.buffaloRate,
-          cowRate: user.buffaloRate,
+          cowRate: user.cowRate,
           phoneNumber: user.phoneNumber,
         };
         setCustomer(newUser);
@@ -128,6 +131,7 @@ const FarmerHome = ({ route }: { route: any }) => {
       user: customer._id,
       userType: 'farmer',
       description: cashPaymentDescription,
+      date: new Date(date),
     };
 
     setIsLoading(true);
@@ -231,17 +235,21 @@ const FarmerHome = ({ route }: { route: any }) => {
             display: 'flex',
             flexDirection: 'row',
             alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
           <Text style={{ fontSize: 16, color: '#3b613cff' }}>
-            {customer.name} ({customer.userCode}){' '}
+            {customer.name}
+          </Text>
+          <Text style={{ fontSize: 16, color: '#3b613cff' }}>
+            Code: {customer.userCode}
           </Text>
         </View>
         <Text
           style={{
             ...styles.milkFarmText,
             color: earnings < 0 ? '#713333ff' : '#3b613cff',
-            fontSize:20
+            fontSize: 20,
           }}
         >
           Total Earnings
@@ -335,7 +343,6 @@ const FarmerHome = ({ route }: { route: any }) => {
           getUser();
         }}
         setTotalEarn={(wt, amnt) => {
-          console.log('total ', wt, amnt);
           setTotalWeight(wt);
           setEarnings(amnt);
         }}
@@ -389,7 +396,102 @@ const FarmerHome = ({ route }: { route: any }) => {
                   placeholder="Set Payment"
                 />
               </View>
-              <View style={styles.inputBox}>
+              <TouchableOpacity
+                style={styles.inputBox}
+                onPress={() => setOpen(true)}
+              >
+                <View>
+                  <TextInput
+                    editable={false}
+                    value={date.toDateString()}
+                    onChangeText={() => {}} // ❌ ignores input
+                    style={styles.textInput}
+                    placeholder="pick Date"
+                  />
+                  <Modal visible={open} transparent animationType="fade">
+                    <View
+                      style={{
+                        flex: 1,
+                        backgroundColor: 'rgba(0,0,0,0.4)',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <View
+                        style={{
+                          backgroundColor: '#fff',
+                          borderRadius: 12,
+                          padding: 16,
+                          width: '90%',
+                        }}
+                      >
+                        <DatePicker
+                          date={date}
+                          onDateChange={setDate}
+                          mode="datetime"
+                        />
+
+                        {/* Buttons */}
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            justifyContent: 'space-around',
+                            marginTop: 12,
+                          }}
+                        >
+                          <TouchableOpacity
+                            onPress={() => setOpen(false)}
+                            style={{
+                              paddingVertical: 10,
+                              paddingHorizontal: 16,
+                              marginRight: 10,
+                              borderWidth: 1,
+                              borderColor: '#5086E7',
+                              width: '30%',
+                              borderRadius: 10,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: '#999',
+                                fontWeight: '600',
+                                textAlign: 'center',
+                              }}
+                            >
+                              Cancel
+                            </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            onPress={() => setOpen(false)}
+                            style={{
+                              paddingVertical: 10,
+                              paddingHorizontal: 16,
+                              backgroundColor: '#5086E7',
+                              width: '30%',
+                              borderRadius: 10,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: '#fff',
+                                fontWeight: '600',
+                                textAlign: 'center',
+                              }}
+                            >
+                              Done
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </View>
+                  </Modal>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.stockContainer}>
+              <View style={[styles.inputBox, { width: '100%' }]}>
                 <TextInput
                   editable
                   multiline

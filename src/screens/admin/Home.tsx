@@ -5,6 +5,7 @@ import { BASE_URL } from '../../../token/tokenStorage';
 import { Table, Row, Rows } from 'react-native-table-component';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
 import { formatDate } from '../../../utility/helperFunctions';
+import { useIsFocused } from '@react-navigation/native';
 
 const Home = () => {
   const firm = useSelector((state: any) => state.firm.value);
@@ -22,12 +23,13 @@ const Home = () => {
   const [totalWeight, setTotalWeight] = useState<number>(200);
   const [avgFat, setAvgFat] = useState<number>(75);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const isFocused = useIsFocused();
 
   useEffect(() => {
     if (firm.id) {
       getTodayEntry(firm.id);
     }
-  }, [firm.id]);
+  }, [firm.id,isFocused]);
 
   const state = {
     tableHead: [
@@ -53,7 +55,7 @@ const Home = () => {
     tableData: allEntries.map((ent: any, i: number) => {
       return [
         <Text style={{ textAlign: 'center', padding: 3, fontSize: 12 }}>
-          {formatDate(new Date(ent.date))} {ent.timeZone}
+          {formatDate(new Date(ent.date))}  {"\n"} {ent.timeZone}
         </Text>,
         <Text style={{ textAlign: 'center', fontWeight: 700, fontSize: 12 }}>
           {ent.userCode}

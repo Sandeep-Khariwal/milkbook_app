@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -12,7 +13,7 @@ import { BASE_URL } from '../../../token/tokenStorage';
 import { useSelector } from 'react-redux';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import FaIcon from 'react-native-vector-icons/Ionicons';
 import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
@@ -21,6 +22,7 @@ const Customers = () => {
   const navigation = useNavigation<any>();
   const [query, setQuery] = useState<string>('');
   const firm = useSelector((state: any) => state.firm.value);
+  const isFocused = useIsFocused();
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [customer, setCustomer] = useState<{
@@ -47,6 +49,7 @@ const Customers = () => {
       buffaloRate: string;
       userCode: string;
       phoneNumber: string;
+      milkUpdated: boolean;
       _id: string;
     }[]
   >([]);
@@ -57,6 +60,7 @@ const Customers = () => {
       buffaloRate: string;
       userCode: string;
       phoneNumber: string;
+      milkUpdated: boolean;
       _id: string;
     }[]
   >([]);
@@ -87,10 +91,8 @@ const Customers = () => {
 
   useEffect(() => {
     getCustomers();
-  }, []);
-  if (isLoading) {
-    return <LoadingOverlay visible={isLoading} />;
-  }
+  }, [isFocused]);
+  
   const getCustomers = async () => {
     setIsLoading(true);
     await fetch(`${BASE_URL}/user/getAllCustomers/${firm.id}`, {
@@ -171,6 +173,7 @@ const Customers = () => {
           cowRate: String(user.cowRate),
           userCode: user.userCode,
           _id: user._id,
+          milkUpdated: false,
         };
         if (isEditCustomer) {
           getCustomers();
@@ -219,22 +222,19 @@ const Customers = () => {
     bottomSheetRefDelete.current?.close();
   };
 
-  const filterCustomer = () => {
+  useEffect(() => {
     if (!query) {
       setAllShowCustomer(allCustomer);
     } else {
-      const filteredData = allShowCustomer.filter(
+      const filteredData = allCustomer.filter(
         (cust: any) =>
-          String(cust.name)
-            .toLocaleLowerCase()
-            .includes(String(query).toLocaleLowerCase()) ||
-          String(cust.userCode)
-            .toLocaleLowerCase()
-            .includes(String(query).toLocaleLowerCase()),
+          cust?.name?.toLowerCase().includes(query.toLowerCase()) ||
+          cust?.userCode?.toLowerCase().includes(query.toLowerCase()),
       );
+
       setAllShowCustomer(filteredData);
     }
-  };
+  }, [query, allCustomer]);
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.container}>
@@ -262,68 +262,85 @@ const Customers = () => {
             placeholder="Search customer..."
           />
         </View>
-        <FaIcon name="search" size={30} onPress={filterCustomer} />
+        {/* <FaIcon name="search" size={30} onPress={filterCustomer} /> */}
       </View>
-      <View style={styles.stocksContainer}>
-        {allShowCustomer.length > 0 ? (
-          allShowCustomer.map((customer: any, index: number) => (
-            <TouchableOpacity
-              onPress={() =>
-                navigation.navigate('CustomerPage', {
-                  id: customer._id,
-                  userType: 'customer',
-                })
-              }
-              key={customer._id ?? index}
-              style={styles.cardContainer}
-            >
-              <View style={styles.cardOne}>
-                <Text
-                  style={{ fontSize: 17, fontWeight: 700, color: '#5086E7' }}
-                >
-                  {customer.name} ({customer.userCode})
-                </Text>
-              </View>
-              <View style={styles.cardTwo}>
-                <Icon
-                  name="edit"
-                  size={26}
-                  color="#333"
-                  onPress={() => {
-                    setIsEditCustomer(true);
-                    setBottomSheetIndex(true);
 
-                    setSelectedCustomer(customer);
-                    setCustomer(customer);
-                  }}
-                />
-                <Icon
-                  name="trash-2"
-                  size={24}
-                  color="#FF0000"
-                  onPress={() => {
-                    setBottomSheetDeleteIndex(true),
+      {isLoading && <LoadingOverlay visible />}
+
+      {!isLoading && allShowCustomer.length === 0 && (
+        <Text style={{ textAlign: 'center', marginTop: 20 }}>No data</Text>
+      )}
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 38 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.stocksContainer}>
+          {allShowCustomer.length > 0 ? (
+            allShowCustomer.map((customer: any, index: number) => (
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate('CustomerPage', {
+                    id: customer._id,
+                    userType: 'customer',
+                  })
+                }
+                key={customer._id ?? index}
+                style={styles.cardContainer}
+              >
+                <View style={styles.cardOne}>
+                  <Text
+                    style={{
+                      fontSize: 17,
+                      fontWeight: 700,
+                      color: !customer.milkUpdated ? '#e54646' : '#0d8e1e',
+                    }}
+                  >
+                    {customer.name} ({customer.userCode})
+                  </Text>
+                </View>
+                <View style={styles.cardTwo}>
+                  <Icon
+                    name="edit"
+                    size={26}
+                    color="#333"
+                    onPress={() => {
+                      setIsEditCustomer(true);
+                      setBottomSheetIndex(true);
+
                       setSelectedCustomer(customer);
-                  }}
-                />
-              </View>
-            </TouchableOpacity>
-          ))
-        ) : (
-          <View
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ fontSize: 18, color: '#8e8e98ff' }}>
-              No Customers created yet
-            </Text>
-          </View>
-        )}
-      </View>
+                      setCustomer(customer);
+                    }}
+                  />
+                  <Icon
+                    name="trash-2"
+                    size={24}
+                    color="#FF0000"
+                    onPress={() => {
+                      setBottomSheetDeleteIndex(true),
+                        setSelectedCustomer(customer);
+                    }}
+                  />
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 18, color: '#8e8e98ff' }}>
+                No Customers created yet
+              </Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
 
       <View style={styles.ButtonBox}>
         <TouchableOpacity
@@ -417,20 +434,6 @@ const Customers = () => {
                   editable
                   multiline
                   numberOfLines={4}
-                  maxLength={40}
-                  onChangeText={text =>
-                    setCustomer(prev => ({ ...prev, cowRate: text }))
-                  }
-                  value={customer.cowRate}
-                  style={styles.textInput}
-                  placeholder="Cow Rate"
-                />
-              </View>
-              <View style={styles.inputBox}>
-                <TextInput
-                  editable
-                  multiline
-                  numberOfLines={4}
                   maxLength={10}
                   onChangeText={text =>
                     setCustomer(prev => ({
@@ -443,31 +446,38 @@ const Customers = () => {
                   placeholder="Buffalo Rate"
                 />
               </View>
+              <View style={styles.inputBox}>
+                <TextInput
+                  editable
+                  multiline
+                  numberOfLines={4}
+                  maxLength={40}
+                  onChangeText={text =>
+                    setCustomer(prev => ({ ...prev, cowRate: text }))
+                  }
+                  value={customer.cowRate}
+                  style={styles.textInput}
+                  placeholder="Cow Rate"
+                />
+              </View>
             </View>
 
             <View style={styles.stockContainer}>
-              {!isEditCustomer && (
-                <View style={styles.inputBox}>
-                  <TextInput
-                    editable
-                    multiline
-                    numberOfLines={4}
-                    maxLength={40}
-                    onChangeText={text =>
-                      setCustomer(prev => ({ ...prev, password: text }))
-                    }
-                    value={customer.password}
-                    style={styles.textInput}
-                    placeholder="Enter Password"
-                  />
-                </View>
-              )}
-              <View
-                style={[
-                  styles.inputBox,
-                  { width: isEditCustomer ? '100%' : '50%' },
-                ]}
-              >
+              <View style={styles.inputBox}>
+                <TextInput
+                  editable
+                  multiline
+                  numberOfLines={4}
+                  maxLength={40}
+                  onChangeText={text =>
+                    setCustomer(prev => ({ ...prev, password: text }))
+                  }
+                  value={customer.password}
+                  style={styles.textInput}
+                  placeholder="Enter Password"
+                />
+              </View>
+              <View style={[styles.inputBox, { width: '50%' }]}>
                 <TextInput
                   editable
                   multiline

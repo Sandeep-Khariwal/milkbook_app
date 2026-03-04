@@ -1,7 +1,8 @@
 import * as Keychain from 'react-native-keychain';
 // export const BASE_URL = "https://milk-time-backend-utlt.onrender.com/api/v1" // Live url
+// export const BASE_URL = "http://72.61.251.156:9000/api/v1" // hostinger Live url
 export const BASE_URL = "http://72.61.251.156:9000/api/v1" // hostinger Live url
-// export const BASE_URL = "http://192.168.0.102:9000/api/v1" // pg
+// export const BASE_URL = "http://192.168.31.151:9000/api/v1" // home wifi
 // export const BASE_URL = "http://192.168.1.8:9000/api/v1" // office
 
 export async function saveToken(token: string) {

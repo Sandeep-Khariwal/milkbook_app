@@ -17,11 +17,9 @@ import AddEntryAndSale from '../../components/customer/AddEntryAndSale';
 import { BASE_URL, deleteToken } from '../../../token/tokenStorage';
 import EntriesTable from './EntriesTable';
 import { setFirmDetails } from '../../../redux/slices/firmSlice';
-import {
-  ALERT_TYPE,
-  Toast,
-} from 'react-native-alert-notification';
+import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
+import DatePicker from 'react-native-date-picker';
 
 const CustomerHome = ({ route }: { route: any }) => {
   const id = route.params.id;
@@ -36,6 +34,8 @@ const CustomerHome = ({ route }: { route: any }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showAddPaymentModal, setShowAddPaymentModal] =
     useState<boolean>(false);
+  const [open, setOpen] = useState<boolean>(false);
+  const [date, setDate] = useState<Date>(new Date());
   const navigation = useNavigation<any>();
   const [totalWeight, setTotalWeight] = useState<number>(0);
   const [customer, setCustomer] = useState<{
@@ -45,7 +45,14 @@ const CustomerHome = ({ route }: { route: any }) => {
     buffaloRate: number;
     phoneNumber: string;
     _id: string;
-  }>({ name: '', phoneNumber: '', _id: '', userCode:'', cowRate: 0, buffaloRate: 0 });
+  }>({
+    name: '',
+    phoneNumber: '',
+    _id: '',
+    userCode: '',
+    cowRate: 0,
+    buffaloRate: 0,
+  });
   const [cashPayment, setCashPayment] = useState<string>('');
   const [cashPaymentDescription, setCashPaymentDescription] =
     useState<string>('');
@@ -118,6 +125,7 @@ const CustomerHome = ({ route }: { route: any }) => {
       user: customer._id,
       userType: 'customer',
       description: cashPaymentDescription,
+      date: new Date(date),
     };
 
     setIsLoading(true);
@@ -129,12 +137,11 @@ const CustomerHome = ({ route }: { route: any }) => {
       body: JSON.stringify(payload),
     })
       .then(async (x: any) => {
-
         setShowAddPaymentModal(false);
         setCashPayment('');
         setCashPaymentDescription('');
         setIsLoading(false);
-        getUser()
+        getUser();
       })
       .catch((e: any) => {
         console.log(e);
@@ -164,7 +171,7 @@ const CustomerHome = ({ route }: { route: any }) => {
         </Text>
         {isCustomer && (
           <Text style={{ color: '#fff', fontSize: 16, marginTop: 5 }}>
-           {customer.name}({customer.userCode}), {customer.phoneNumber}
+            {customer.name}({customer.userCode}), {customer.phoneNumber}
           </Text>
         )}
       </View>
@@ -213,11 +220,26 @@ const CustomerHome = ({ route }: { route: any }) => {
         style={{
           ...styles.eraningBox,
           backgroundColor: earnings < 0 ? '#dccfcfff' : '#e1e6e2ff',
-          borderColor: earnings < 0 ? '#dccfcfff' : '#e1e6e2ff'
+          borderColor: earnings < 0 ? '#dccfcfff' : '#e1e6e2ff',
         }}
       >
-        <View style={{width:"100%",paddingLeft:4, paddingRight:4, display:"flex", flexDirection:"row", alignItems:"center"}} >
-          <Text style={{fontSize:16, color:"#3b613cff"  }} >{customer.name} ({customer.userCode}) </Text>
+        <View
+          style={{
+            width: '100%',
+            paddingLeft: 4,
+            paddingRight: 4,
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Text style={{ fontSize: 16, color: '#3b613cff' }}>
+            {customer.name}
+          </Text>
+          <Text style={{ fontSize: 16, color: '#3b613cff' }}>
+            Code: {customer.userCode}
+          </Text>
         </View>
         <Text
           style={{
@@ -251,42 +273,41 @@ const CustomerHome = ({ route }: { route: any }) => {
               ...styles.milkFarmText,
               color: earnings < 0 ? '#713333ff' : '#3b613cff',
               marginTop: 4,
-              fontSize:26
+              fontSize: 26,
             }}
           >
             {earnings?.toFixed(2) ?? 0}
           </Text>
         </View>
         {/* {isCustomer && ( */}
-          <View
+        <View
+          style={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingTop: 10,
+            gap: 5,
+          }}
+        >
+          <Text
             style={{
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingTop: 10,
-              gap: 5,
+              ...styles.milkFarmText,
+              color: earnings < 0 ? '#713333ff' : '#3b613cff',
+              marginTop: 4,
             }}
           >
-            <Text
-              style={{
-                ...styles.milkFarmText,
-                color: earnings < 0 ? '#713333ff' : '#3b613cff',
-                marginTop: 4,
-              }}
-            >
-              {totalWeight?.toFixed(1) ?? 0}Kg (Milk)
-            </Text>
-          </View>
+            {totalWeight?.toFixed(1) ?? 0}Kg (Milk)
+          </Text>
+        </View>
         {/* )} */}
       </View>
       <Modal
         animationType="fade"
         transparent={true}
         visible={showLogout}
-        onRequestClose={() => {
-        }}
+        onRequestClose={() => {}}
         style={{
           flex: 1,
           display: 'flex',
@@ -388,14 +409,108 @@ const CustomerHome = ({ route }: { route: any }) => {
                   placeholder="Set Payment"
                 />
               </View>
-              <View style={styles.inputBox}>
+              <TouchableOpacity
+                style={styles.inputBox}
+                onPress={() => setOpen(true)}
+              >
+                <View>
+                  <TextInput
+                    editable={false}
+                    value={date.toDateString()}
+                    onChangeText={() => {}} // ❌ ignores input
+                    style={styles.textInput}
+                    placeholder="pick Date"
+                  />
+                  <Modal visible={open} transparent animationType="fade">
+                    <View
+                      style={{
+                        flex: 1,
+                        backgroundColor: 'rgba(0,0,0,0.4)',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <View
+                        style={{
+                          backgroundColor: '#fff',
+                          borderRadius: 12,
+                          padding: 16,
+                          width: '90%',
+                        }}
+                      >
+                        <DatePicker
+                          date={date}
+                          onDateChange={setDate}
+                          mode="datetime"
+                        />
+
+                        {/* Buttons */}
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            justifyContent: 'space-around',
+                            marginTop: 12,
+                          }}
+                        >
+                          <TouchableOpacity
+                            onPress={() => setOpen(false)}
+                            style={{
+                              paddingVertical: 10,
+                              paddingHorizontal: 16,
+                              marginRight: 10,
+                              borderWidth: 1,
+                              borderColor: '#5086E7',
+                              width: '30%',
+                              borderRadius: 10,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: '#999',
+                                fontWeight: '600',
+                                textAlign: 'center',
+                              }}
+                            >
+                              Cancel
+                            </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            onPress={() => setOpen(false)}
+                            style={{
+                              paddingVertical: 10,
+                              paddingHorizontal: 16,
+                              backgroundColor: '#5086E7',
+                              width: '30%',
+                              borderRadius: 10,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: '#fff',
+                                fontWeight: '600',
+                                textAlign: 'center',
+                              }}
+                            >
+                              Done
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </View>
+                  </Modal>
+                </View>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.stockContainer}>
+              <View style={[styles.inputBox, { width: '100%' }]}>
                 <TextInput
                   editable
                   multiline
                   numberOfLines={4}
                   onChangeText={text => setCashPaymentDescription(text)}
                   value={cashPaymentDescription}
-                  style={styles.textInput}
+                  style={[styles.textInput, { width: '100%' }]}
                   placeholder="Description"
                 />
               </View>
@@ -447,8 +562,8 @@ const styles = StyleSheet.create({
     width: '90%',
     // height: 200,
     borderWidth: 1,
-    paddingTop:20,
-    paddingBottom:20,
+    paddingTop: 20,
+    paddingBottom: 20,
 
     borderRadius: 20,
     alignSelf: 'center',

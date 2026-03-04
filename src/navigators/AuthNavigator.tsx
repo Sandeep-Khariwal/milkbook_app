@@ -41,7 +41,6 @@ export default function AuthNavigator() {
       .then(async (res: any) => {
         const data = await res.json();
         const { user, token, message, status } = data;
-        console.log("message : ",status,message);
         
         setIsLoading(false);
         if (status === 404) {
@@ -89,6 +88,8 @@ export default function AuthNavigator() {
         }
       })
       .catch((e: any) => {
+        console.log(e);
+        
         setIsLoading(false);
       });
   };

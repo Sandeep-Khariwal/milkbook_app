@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -12,7 +13,7 @@ import { BASE_URL, getToken } from '../../../token/tokenStorage';
 import { useSelector } from 'react-redux';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { SelectList } from 'react-native-dropdown-select-list';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
 import DatePicker from 'react-native-date-picker';
@@ -54,7 +55,7 @@ const Stocks = () => {
   }>({ item: '', quantity: 0, _id: '', price: 0 });
 
   const [isEditStock, setIsEditStock] = useState<boolean>(false);
-
+  const isFocused = useIsFocused();
   useEffect(() => {
     const getStocks = async () => {
       setIsLoading(true);
@@ -75,7 +76,7 @@ const Stocks = () => {
         });
     };
     getStocks();
-  }, []);
+  }, [isFocused]);
 
   const CreateStock = async () => {
     if (!stockName || !stockQuantity || !stockPrice) {
@@ -232,66 +233,77 @@ const Stocks = () => {
           <Text style={styles.text}>History</Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.stocksContainer}>
-        {stocks && stocks.length > 0 ? (
-          stocks.map((stock: any) => (
-            <View key={stock._id} style={styles.cardContainer}>
-              <View style={styles.cardOne}>
-                <Text
-                  style={{ fontSize: 20, fontWeight: 700, color: '#3b613cff' }}
-                >
-                  {stock.item}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: stock.quantity < 5 ? '#cf3434ff' : '#3b613cff',
-                  }}
-                >
-                  {stock.quantity} available
-                </Text>
-              </View>
-              <View style={styles.cardTwo}>
-                <Icon
-                  name="edit"
-                  size={26}
-                  color="#333"
-                  onPress={() => {
-                    setIsEditStock(true);
-                    setBottomSheetIndex(true);
-                    setStockName(stock.item);
 
-                    setStockPrice(String(stock.price));
-                    setStockQuantity(String(stock.quantity));
-                    setSelectedStock(stock);
-                  }}
-                />
-                <Icon
-                  name="trash-2"
-                  size={24}
-                  color="#FF0000"
-                  onPress={() => {
-                    setBottomSheetDeleteIndex(true), setSelectedStock(stock);
-                  }}
-                />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 38 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.stocksContainer, {paddingBottom:58}]}>
+          {stocks && stocks.length > 0 ? (
+            stocks.map((stock: any) => (
+              <View key={stock._id} style={styles.cardContainer}>
+                <View style={styles.cardOne}>
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 700,
+                      color: '#3b613cff',
+                    }}
+                  >
+                    {stock.item}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: stock.quantity < 5 ? '#cf3434ff' : '#3b613cff',
+                    }}
+                  >
+                    {stock.quantity} available
+                  </Text>
+                </View>
+                <View style={styles.cardTwo}>
+                  <Icon
+                    name="edit"
+                    size={26}
+                    color="#333"
+                    onPress={() => {
+                      setIsEditStock(true);
+                      setBottomSheetIndex(true);
+                      setStockName(stock.item);
+
+                      setStockPrice(String(stock.price));
+                      setStockQuantity(String(stock.quantity));
+                      setSelectedStock(stock);
+                    }}
+                  />
+                  <Icon
+                    name="trash-2"
+                    size={24}
+                    color="#FF0000"
+                    onPress={() => {
+                      setBottomSheetDeleteIndex(true), setSelectedStock(stock);
+                    }}
+                  />
+                </View>
               </View>
+            ))
+          ) : (
+            <View
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 18, color: '#8e8e98ff' }}>
+                No stocks created yet
+              </Text>
             </View>
-          ))
-        ) : (
-          <View
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ fontSize: 18, color: '#8e8e98ff' }}>
-              No stocks created yet
-            </Text>
-          </View>
-        )}
-      </View>
+          )}
+        </View>
+      </ScrollView>
 
       <View style={styles.ButtonBox}>
         <TouchableOpacity

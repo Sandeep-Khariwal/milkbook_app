@@ -132,7 +132,7 @@ const ShowHistory = ({ route }: { route: any }) => {
 
   const getAllHistory = async (id: string) => {
     try {
-      const res = await fetch(`${BASE_URL}/history/all/${id}`);
+      const res = await fetch(`${BASE_URL}/history/all/${id}?month=1`);
       const { data } = await res.json();
 
       setAllHistory(data);
@@ -270,7 +270,7 @@ const ShowHistory = ({ route }: { route: any }) => {
   const renderItem = ({ item }: any) => {
     return (
       <View style={styles.card}>
-        {item.productName && (
+       
           <View style={styles.row}>
             <Text style={styles.productName}>{item.productName}</Text>
 
@@ -284,6 +284,8 @@ const ShowHistory = ({ route }: { route: any }) => {
                 gap: 10,
               }}
             >
+               {item.productName && (
+
               <FeIcon
                 name="edit"
                 size={20}
@@ -294,6 +296,7 @@ const ShowHistory = ({ route }: { route: any }) => {
                   setSelectedHistory(item);
                 }}
               />
+               )}
 
               <FeIcon
                 name="trash-2"
@@ -305,7 +308,7 @@ const ShowHistory = ({ route }: { route: any }) => {
               />
             </View>
           </View>
-        )}
+
 
         <View style={styles.row}>
           <Text style={styles.label}>Customer:</Text>

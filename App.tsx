@@ -58,7 +58,6 @@ function AppContent() {
     // await deleteToken()
     setIsLoading(true);
     const token = (await getToken()) ?? '';
-    console.log('token : ', token);
 
     await fetch(`${BASE_URL}/user/getUser`, {
       method: 'GET',
@@ -68,8 +67,6 @@ function AppContent() {
       },
     })
       .then(async (res: any) => {
-        console.log('resp : ', res);
-
         const { user } = await res.json();
 
         const firmData = {

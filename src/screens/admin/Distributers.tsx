@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -174,57 +175,62 @@ const Distributers = () => {
   }
   return (
     <View style={styles.container}>
-      <View style={styles.stocksContainer}>
-        {allDistributers.length > 0 ? (
-          allDistributers.map((distributer: any, i: number) => (
-            <View key={distributer._id ?? i} style={styles.cardContainer}>
-              <View style={styles.cardOne}>
-                <Text
-                  style={{ fontSize: 18, fontWeight: 600, color: '#5086E7' }}
-                >
-                  {distributer.name}
-                </Text>
-              </View>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 38 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.stocksContainer}>
+          {allDistributers.length > 0 ? (
+            allDistributers.map((distributer: any, i: number) => (
+              <View key={distributer._id ?? i} style={styles.cardContainer}>
+                <View style={styles.cardOne}>
+                  <Text
+                    style={{ fontSize: 18, fontWeight: 600, color: '#5086E7' }}
+                  >
+                    {distributer.name}
+                  </Text>
+                </View>
 
-              <View style={styles.cardTwo}>
-                <Icon
-                  name="edit"
-                  size={26}
-                  color="#333"
-                  onPress={() => {
-                    setIsEditDistributer(true);
-                    setBottomSheetIndex(true);
-                    setDistributer(distributer);
-                  }}
-                />
-                <Icon
-                  name="trash-2"
-                  size={24}
-                  color="#FF0000"
-                  onPress={() => {
-                    setBottomSheetDeleteIndex(true),
-                      setSelectedDistributer(distributer);
-                  }}
-                />
+                <View style={styles.cardTwo}>
+                  <Icon
+                    name="edit"
+                    size={26}
+                    color="#333"
+                    onPress={() => {
+                      setIsEditDistributer(true);
+                      setBottomSheetIndex(true);
+                      setDistributer(distributer);
+                    }}
+                  />
+                  <Icon
+                    name="trash-2"
+                    size={24}
+                    color="#FF0000"
+                    onPress={() => {
+                      setBottomSheetDeleteIndex(true),
+                        setSelectedDistributer(distributer);
+                    }}
+                  />
+                </View>
               </View>
+            ))
+          ) : (
+            <View
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 18, color: '#8e8e98ff' }}>
+                No Distributers created yet
+              </Text>
             </View>
-          ))
-        ) : (
-          <View
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ fontSize: 18, color: '#8e8e98ff' }}>
-              No Distributers created yet
-            </Text>
-          </View>
-        )}
-      </View>
-
+          )}
+        </View>
+      </ScrollView>
       <View style={styles.ButtonBox}>
         <TouchableOpacity
           style={styles.button}

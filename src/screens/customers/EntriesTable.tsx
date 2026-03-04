@@ -102,7 +102,7 @@ const tableHead = [
   'Weight',
   ...(props.userType === 'farmer' ? ['FAT'] : []),
   'Amount',
-  ...(firm.role === 'admin' || firm.role === 'distributer' ? ['Action'] : []),
+  ...(firm.role === 'admin' ? ['Action'] : []),
 ];
 
 const tableData = allEntries.map(ent => [
@@ -118,7 +118,7 @@ const tableData = allEntries.map(ent => [
   Number(ent.amount).toFixed(2),
 
   // Action only for admin
-  ...(firm.role === 'admin' || firm.role === 'distributer'
+  ...(firm.role === 'admin'
     ? [
         <FeIcon
           name="edit"
@@ -133,6 +133,9 @@ const tableData = allEntries.map(ent => [
               timeZone: ent.timeZone,
               date: new Date(ent.date),
             };
+            if(ent.isBuffalo != undefined){
+              setIsBuffalo(ent.isBuffalo)
+            }
             setMilkEntry(editEntry);
             setOpenEditModal(true);
           }}
@@ -193,7 +196,6 @@ const tableData = allEntries.map(ent => [
       _id: milkEntry._id,
     };
 
-    console.log('payload : ', payload);
 
     // return
 
@@ -481,6 +483,8 @@ const styles = StyleSheet.create({
   },
   textInput: {
     height: 40,
+    width:"100%",
+    textAlign:"center"
   },
 
   head: {
