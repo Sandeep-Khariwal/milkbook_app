@@ -111,7 +111,10 @@ const Customers = () => {
               cowRate: String(u.cowRate),
               buffaloRate: String(u.buffaloRate),
             };
-          });
+          }).sort((a, b) => Number(a.userCode) - Number(b.userCode));
+
+          console.log("filterdUsers : ",filterdUsers);
+          
         setAllCustomer(filterdUsers);
         setAllShowCustomer(filterdUsers);
         setIsLoading(false);

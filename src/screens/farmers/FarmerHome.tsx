@@ -230,8 +230,8 @@ const FarmerHome = ({ route }: { route: any }) => {
         <View
           style={{
             width: '100%',
-            paddingLeft: 4,
-            paddingRight: 4,
+            paddingLeft: 15,
+            paddingRight: 15,
             display: 'flex',
             flexDirection: 'row',
             alignItems: 'center',

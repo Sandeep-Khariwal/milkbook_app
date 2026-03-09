@@ -109,7 +109,7 @@ const Farmers = () => {
             cowRate: String(usr.cowRate),
             buffaloRate: String(usr.buffaloRate),
           };
-        });
+        }).sort((a, b) => Number(a.userCode) - Number(b.userCode));
 
         setAllFarmer(data);
         setAllShowFarmer(data);

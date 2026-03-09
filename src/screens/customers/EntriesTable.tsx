@@ -107,7 +107,7 @@ const tableHead = [
 
 const tableData = allEntries.map(ent => [
   // Date + Time together
-  `${formatDate(new Date(ent.date))} ${ent.timeZone}`,
+  `${formatDate(new Date(ent.date))}  ${ent.timeZone}`,
 
   ent.weight,
 
@@ -360,6 +360,16 @@ const tableData = allEntries.map(ent => [
               />
             </View>
             <View style={styles.IconContainer}>
+                      <TouchableOpacity
+                style={[styles.iconWrapper, isBuffalo && styles.selected]}
+                onPress={() => setIsBuffalo(true)}
+              >
+                <Image
+                  source={require('../../assets/buffalo.png')}
+                  style={styles.icon}
+                />
+              </TouchableOpacity>
+
               <TouchableOpacity
                 style={[styles.iconWrapper, !isBuffalo && styles.selected]}
                 onPress={() => setIsBuffalo(false)}
@@ -370,17 +380,9 @@ const tableData = allEntries.map(ent => [
                 />
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.iconWrapper, isBuffalo && styles.selected]}
-                onPress={() => setIsBuffalo(true)}
-              >
-                <Image
-                  source={require('../../assets/buffalo.png')}
-                  style={styles.icon}
-                />
-              </TouchableOpacity>
+
             </View>
-            <View style={[styles.stockContainer, { height: 50 }]}>
+            <View style={[styles.stockContainer, { height: 50 , marginTop:20 }]}>
               <View
                 style={[
                   styles.inputBox,
@@ -552,8 +554,8 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   iconWrapper: {
-    width: 40,
-    height: 40,
+    width: 50,
+    height: 50,
     borderRadius: 35,
     borderWidth: 2,
     borderColor: '#ccc',
@@ -562,8 +564,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   icon: {
-    width: 30,
-    height: 30,
+    width: 40,
+    height: 40,
     resizeMode: 'contain',
   },
   selected: {
