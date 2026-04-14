@@ -6,11 +6,12 @@ export interface FirmState {
     id: string;
     name: string;
     role: string;
+    subscriptionExp?:boolean
   };
 }
 
 const initialState: FirmState = {
-  value: { id: '', name: '', role: "" },
+  value: { id: '', name: '', role: "" , subscriptionExp:false },
 };
 
 export const firmSlice = createSlice({
@@ -23,6 +24,7 @@ export const firmSlice = createSlice({
         id: string;
         name: string;
         role: string;
+        subscriptionExp?:boolean
       }>,
     ) => {
       state.value = action.payload;

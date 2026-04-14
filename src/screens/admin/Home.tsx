@@ -7,7 +7,7 @@ import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
 import { formatDate } from '../../../utility/helperFunctions';
 import { useIsFocused } from '@react-navigation/native';
 
-const Home = () => {
+const Home = ({ navigation }) => {
   const firm = useSelector((state: any) => state.firm.value);
   const [allEntries, setAllEntries] = useState<
     {
@@ -26,10 +26,13 @@ const Home = () => {
   const isFocused = useIsFocused();
 
   useEffect(() => {
+    if (firm.subscriptionExp) {
+      navigation.navigate('Plans');
+    }
     if (firm.id) {
       getTodayEntry(firm.id);
     }
-  }, [firm.id,isFocused]);
+  }, [firm.id, isFocused]);
 
   const state = {
     tableHead: [
@@ -50,12 +53,12 @@ const Home = () => {
       </Text>,
       <Text style={{ textAlign: 'center', fontWeight: 700, fontSize: 12 }}>
         Amount
-      </Text>
+      </Text>,
     ],
     tableData: allEntries.map((ent: any, i: number) => {
       return [
         <Text style={{ textAlign: 'center', padding: 3, fontSize: 12 }}>
-          {formatDate(new Date(ent.date))}  {"\n"} {ent.timeZone}
+          {formatDate(new Date(ent.date))} {'\n'} {ent.timeZone}
         </Text>,
         <Text style={{ textAlign: 'center', fontWeight: 700, fontSize: 12 }}>
           {ent.userCode}
@@ -71,7 +74,7 @@ const Home = () => {
         </Text>,
         <Text style={{ textAlign: 'center', padding: 3, fontSize: 12 }}>
           {Number(ent.amount).toFixed(2)}
-        </Text>
+        </Text>,
       ];
     }),
   };
@@ -127,8 +130,6 @@ const Home = () => {
           setAvgFat(0);
         }
         setIsLoading(false);
-        
-        
       })
       .catch((e: any) => {
         console.log(e);
@@ -154,7 +155,11 @@ const Home = () => {
           </Text>
         </View>
       </View>
-      <ScrollView style={styles.container}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: 50 }}
+        showsVerticalScrollIndicator={false}
+      >
         <Table borderStyle={{ borderWidth: 2, borderColor: '#81bce6ff' }}>
           <Row
             data={state.tableHead}

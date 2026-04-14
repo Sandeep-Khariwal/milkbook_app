@@ -57,6 +57,9 @@ const Stocks = () => {
   const [isEditStock, setIsEditStock] = useState<boolean>(false);
   const isFocused = useIsFocused();
   useEffect(() => {
+    if (firm.subscriptionExp) {
+      navigation.navigate('Plans');
+    }
     const getStocks = async () => {
       setIsLoading(true);
       await fetch(`${BASE_URL}/firm/stocks/${firm.id}`, {
@@ -239,7 +242,7 @@ const Stocks = () => {
         contentContainerStyle={{ paddingBottom: 38 }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.stocksContainer, {paddingBottom:58}]}>
+        <View style={[styles.stocksContainer, { paddingBottom: 58 }]}>
           {stocks && stocks.length > 0 ? (
             stocks.map((stock: any) => (
               <View key={stock._id} style={styles.cardContainer}>
@@ -681,7 +684,7 @@ const styles = StyleSheet.create({
   cardContainer: {
     width: '95%',
     backgroundColor: '#fff', //e7e7eeff
-    height: 60,
+    height: 75,
     marginTop: 15,
     borderRadius: 10,
     borderWidth: 1,

@@ -39,12 +39,28 @@ const FarmerHome = ({ route }: { route: any }) => {
   const [showAddPaymentModal, setShowAddPaymentModal] =
     useState<boolean>(false);
   const [customer, setCustomer] = useState<{
+    _id: string;
     name: string;
     userCode: string;
     buffaloRate: number;
     cowRate: number;
     phoneNumber: string;
-    _id: string;
+    cowMilk?: {
+      activeCowMilk: boolean;
+      fixedAmount: boolean;
+      fatAmount: boolean;
+      snfAmount: boolean;
+      morningTimeMilk: boolean;
+      eveningTimeMilk: boolean;
+    };
+    buffaloMilk?: {
+      activeBuffaloMilk: boolean;
+      fixedAmount: boolean;
+      fatAmount: boolean;
+      snfAmount: boolean;
+      morningTimeMilk: boolean;
+      eveningTimeMilk: boolean;
+    };
   }>({
     name: '',
     phoneNumber: '',
@@ -52,6 +68,22 @@ const FarmerHome = ({ route }: { route: any }) => {
     userCode: '',
     buffaloRate: 0,
     cowRate: 0,
+    cowMilk: {
+      activeCowMilk: false,
+      fixedAmount: false,
+      fatAmount: false,
+      snfAmount: false,
+      morningTimeMilk: false,
+      eveningTimeMilk: false,
+    },
+    buffaloMilk: {
+      activeBuffaloMilk: false,
+      fixedAmount: false,
+      fatAmount: false,
+      snfAmount: false,
+      morningTimeMilk: false,
+      eveningTimeMilk: false,
+    },
   });
 
   const [cashPayment, setCashPayment] = useState<string>('');
@@ -87,6 +119,8 @@ const FarmerHome = ({ route }: { route: any }) => {
           buffaloRate: user.buffaloRate,
           cowRate: user.cowRate,
           phoneNumber: user.phoneNumber,
+          cowMilk: user?.cowMilk,
+          buffaloMilk: user?.buffaloMilk,
         };
         setCustomer(newUser);
         setIsLoading(false);

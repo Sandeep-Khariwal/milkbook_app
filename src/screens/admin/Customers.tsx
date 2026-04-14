@@ -9,61 +9,53 @@ import {
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import { BASE_URL } from '../../../token/tokenStorage';
-import { useSelector } from 'react-redux';
+import { BASE_URL, getToken } from '../../../token/tokenStorage';
+import { useDispatch, useSelector } from 'react-redux';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
-import FaIcon from 'react-native-vector-icons/Ionicons';
+import FaIcon from 'react-native-vector-icons/FontAwesome';
 import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
+import BouncyCheckbox from 'react-native-bouncy-checkbox';
+import { Farmer } from '../../interface';
+import { setAdminDetails } from '../../../redux/slices/adminSlice';
+import { setFirmDetails } from '../../../redux/slices/firmSlice';
 
 const Customers = () => {
   const navigation = useNavigation<any>();
+  const isFocused = useIsFocused();
   const [query, setQuery] = useState<string>('');
   const firm = useSelector((state: any) => state.firm.value);
-  const isFocused = useIsFocused();
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [customer, setCustomer] = useState<{
-    name: string;
-    phoneNumber: string;
-    password: string;
-    cowRate: string;
-    buffaloRate: string;
-    userCode: string;
-    _id: string;
-  }>({
+  const [customer, setCustomer] = useState<Farmer>({
     name: '',
     phoneNumber: '',
     password: '',
     buffaloRate: '',
     cowRate: '',
     userCode: '',
+    cowMilk: {
+      activeCowMilk: false,
+      fixedAmount: false,
+      fatAmount: false,
+      snfAmount: false,
+      morningTimeMilk: false,
+      eveningTimeMilk: false,
+    },
+    buffaloMilk: {
+      activeBuffaloMilk: false,
+      fixedAmount: false,
+      fatAmount: false,
+      snfAmount: false,
+      morningTimeMilk: false,
+      eveningTimeMilk: false,
+    },
     _id: '',
   });
-  const [allCustomer, setAllCustomer] = useState<
-    {
-      name: string;
-      cowRate: string;
-      buffaloRate: string;
-      userCode: string;
-      phoneNumber: string;
-      milkUpdated: boolean;
-      _id: string;
-    }[]
-  >([]);
-  const [allShowCustomer, setAllShowCustomer] = useState<
-    {
-      name: string;
-      cowRate: string;
-      buffaloRate: string;
-      userCode: string;
-      phoneNumber: string;
-      milkUpdated: boolean;
-      _id: string;
-    }[]
-  >([]);
+  const [allCustomer, setAllCustomer] = useState<Farmer[]>([]);
+  const [allShowCustomer, setAllShowCustomer] = useState<Farmer[]>([]);
 
   const bottomSheetRef = useRef<BottomSheet>(null);
   const bottomSheetRefDelete = useRef<BottomSheet>(null);
@@ -77,6 +69,22 @@ const Customers = () => {
     buffaloRate: string;
     userCode: string;
     phoneNumber: string;
+    cowMilk?: {
+      activeCowMilk: boolean;
+      fixedAmount: boolean;
+      fatAmount: boolean;
+      snfAmount: boolean;
+      morningTimeMilk: boolean;
+      eveningTimeMilk: boolean;
+    };
+    buffaloMilk?: {
+      activeBuffaloMilk: boolean;
+      fixedAmount: boolean;
+      fatAmount: boolean;
+      snfAmount: boolean;
+      morningTimeMilk: boolean;
+      eveningTimeMilk: boolean;
+    };
     _id: string;
   }>({
     name: '',
@@ -85,24 +93,72 @@ const Customers = () => {
     buffaloRate: '',
     cowRate: '',
     userCode: '',
+    cowMilk: {
+      activeCowMilk: false,
+      fixedAmount: false,
+      fatAmount: false,
+      snfAmount: false,
+      morningTimeMilk: false,
+      eveningTimeMilk: false,
+    },
+    buffaloMilk: {
+      activeBuffaloMilk: false,
+      fixedAmount: false,
+      fatAmount: false,
+      snfAmount: false,
+      morningTimeMilk: false,
+      eveningTimeMilk: false,
+    },
   });
 
   const [isEditCustomer, setIsEditCustomer] = useState<boolean>(false);
+  const dispatch = useDispatch();
 
   useEffect(() => {
+    if (firm.subscriptionExp) {
+      navigation.navigate('Plans');
+    }
     getCustomers();
   }, [isFocused]);
-  
+
   const getCustomers = async () => {
     setIsLoading(true);
+    const token = await getToken();
+    //  Authorization: `Bearer ${token}`,
     await fetch(`${BASE_URL}/user/getAllCustomers/${firm.id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
       },
     })
       .then(async (res: any) => {
         const { users } = await res.json();
+
+        // if (status === 403) {
+        //   console.log('subscription expired : ');
+        //   Toast.show({
+        //     type: ALERT_TYPE.DANGER,
+        //     title: 'Error',
+        //     textBody: `subscription expired!!`,
+        //   });
+
+        //   const userData = {
+        //     id: data.user._id,
+        //     name: data.user.name,
+        //   };
+        //   dispatch(setAdminDetails(userData));
+
+        //   const firmData = {
+        //     name: '',
+        //     id: '',
+        //     role: 'admin',
+        //     subscriptionExp: true,
+        //   };
+        //   dispatch(setFirmDetails(firmData));
+
+        //   return;
+        // }
         const filterdUsers = users
           .filter((d: any) => d.userType === 'customer')
           .map((u: any) => {
@@ -111,10 +167,9 @@ const Customers = () => {
               cowRate: String(u.cowRate),
               buffaloRate: String(u.buffaloRate),
             };
-          }).sort((a, b) => Number(a.userCode) - Number(b.userCode));
+          })
+          .sort((a, b) => Number(a.userCode) - Number(b.userCode));
 
-          console.log("filterdUsers : ",filterdUsers);
-          
         setAllCustomer(filterdUsers);
         setAllShowCustomer(filterdUsers);
         setIsLoading(false);
@@ -169,15 +224,6 @@ const Customers = () => {
 
           return;
         }
-        const newUser = {
-          name: user.name,
-          phoneNumber: user.phoneNumber,
-          buffaloRate: String(user.buffaloRate),
-          cowRate: String(user.cowRate),
-          userCode: user.userCode,
-          _id: user._id,
-          milkUpdated: false,
-        };
         if (isEditCustomer) {
           getCustomers();
           Toast.show({
@@ -186,8 +232,8 @@ const Customers = () => {
             textBody: `${customer.name} customer updated!!`,
           });
         } else {
-          setAllCustomer(prev => [...prev, newUser]);
-          setAllShowCustomer(prev => [...prev, newUser]);
+          setAllCustomer(prev => [...prev, user]);
+          setAllShowCustomer(prev => [...prev, user]);
           Toast.show({
             type: ALERT_TYPE.SUCCESS,
             title: 'Success',
@@ -302,6 +348,22 @@ const Customers = () => {
                   >
                     {customer.name} ({customer.userCode})
                   </Text>
+
+                  <View style={styles.timeContainer}>
+                    {(customer?.cowMilk?.morningTimeMilk ||
+                      customer?.buffaloMilk?.morningTimeMilk) && (
+                      <View style={styles.circle}>
+                        <Text style={styles.timeText}>M</Text>
+                      </View>
+                    )}
+
+                    {(customer?.cowMilk?.eveningTimeMilk ||
+                      customer?.buffaloMilk?.eveningTimeMilk) && (
+                      <View style={styles.circle}>
+                        <Text style={styles.timeText}>E</Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
                 <View style={styles.cardTwo}>
                   <Icon
@@ -357,6 +419,22 @@ const Customers = () => {
                 buffaloRate: '',
                 cowRate: '',
                 userCode: '',
+                cowMilk: {
+                  activeCowMilk: false,
+                  fixedAmount: false,
+                  fatAmount: false,
+                  snfAmount: false,
+                  morningTimeMilk: false,
+                  eveningTimeMilk: false,
+                },
+                buffaloMilk: {
+                  activeBuffaloMilk: false,
+                  fixedAmount: false,
+                  fatAmount: false,
+                  snfAmount: false,
+                  morningTimeMilk: false,
+                  eveningTimeMilk: false,
+                },
                 _id: '',
               });
             setSelectedCustomer({
@@ -400,7 +478,291 @@ const Customers = () => {
                 }}
               />
             </View>
+            <View
+              style={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <View
+                style={{
+                  width: '30%',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  gap: 10,
+                }}
+              >
+                <BouncyCheckbox
+                  size={20}
+                  fillColor="#9C27B0"
+                  unFillColor="#F7F5FF"
+                  style={{ width: '70%' }}
+                  text="Buffalo"
+                  iconStyle={{ borderColor: '#9C27B0' }}
+                  innerIconStyle={{ borderWidth: 2 }}
+                  textContainerStyle={{ marginLeft: 4 }}
+                  textStyle={{
+                    color: '#000',
+                    fontSize: 16,
+                    textDecorationLine: 'none',
+                  }}
+                  isChecked={customer?.buffaloMilk?.activeBuffaloMilk}
+                  onPress={isChecked => {
+                    setCustomer(prev => ({
+                      ...prev,
+                      buffaloMilk: {
+                        ...prev.buffaloMilk,
+                        activeBuffaloMilk: isChecked,
+                      },
+                    }));
 
+                    if (!isChecked) {
+                      setCustomer(prev => ({
+                        ...prev,
+                        buffaloMilk: {
+                          ...prev.buffaloMilk,
+                          morningTimeMilk: isChecked,
+                          eveningTimeMilk: isChecked,
+                          fixedAmount: isChecked,
+                          fatAmount: isChecked,
+                          snfAmount: isChecked,
+                        },
+                      }));
+                    }
+                  }}
+                />
+                <FaIcon name="arrows-h" size={16} />
+              </View>
+              <BouncyCheckbox
+                size={20}
+                fillColor="#9C27B0"
+                unFillColor="#F7F5FF"
+                style={{ width: '20%' }}
+                text="Fixed"
+                iconStyle={{ borderColor: '#9C27B0' }}
+                innerIconStyle={{ borderWidth: 2 }}
+                textContainerStyle={{ marginLeft: 4 }}
+                textStyle={{
+                  color: '#000',
+                  fontSize: 16,
+                  textDecorationLine: 'none',
+                }}
+                isChecked={customer?.buffaloMilk?.fixedAmount}
+                onPress={isChecked => {
+                  setCustomer(prev => ({
+                    ...prev,
+                    buffaloMilk: {
+                      ...prev.buffaloMilk,
+                      fixedAmount: isChecked,
+                      fatAmount: false,
+                      snfAmount: false,
+                    },
+                  }));
+                }}
+              />
+              <BouncyCheckbox
+                size={20}
+                fillColor="#9C27B0"
+                unFillColor="#F7F5FF"
+                style={{ width: '20%' }}
+                text="Fat"
+                iconStyle={{ borderColor: '#9C27B0' }}
+                innerIconStyle={{ borderWidth: 2 }}
+                textContainerStyle={{ marginLeft: 4 }}
+                textStyle={{
+                  color: '#000',
+                  fontSize: 16,
+                  textDecorationLine: 'none',
+                }}
+                isChecked={customer?.buffaloMilk?.fatAmount}
+                onPress={isChecked => {
+                  setCustomer(prev => ({
+                    ...prev,
+                    buffaloMilk: {
+                      ...prev.buffaloMilk,
+                      fatAmount: isChecked,
+                      fixedAmount: false,
+                      snfAmount: false,
+                    },
+                  }));
+                }}
+              />
+              <BouncyCheckbox
+                size={20}
+                fillColor="#9C27B0"
+                unFillColor="#F7F5FF"
+                style={{ width: '20%' }}
+                text="SNF"
+                iconStyle={{ borderColor: '#9C27B0' }}
+                innerIconStyle={{ borderWidth: 2 }}
+                textContainerStyle={{ marginLeft: 4 }}
+                textStyle={{
+                  color: '#000',
+                  fontSize: 16,
+                  textDecorationLine: 'none',
+                }}
+                isChecked={customer?.buffaloMilk?.snfAmount}
+                onPress={isChecked => {
+                  setCustomer(prev => ({
+                    ...prev,
+                    buffaloMilk: {
+                      ...prev.buffaloMilk,
+                      snfAmount: isChecked,
+                      fixedAmount: false,
+                      fatAmount: false,
+                    },
+                  }));
+                }}
+              />
+            </View>
+
+            <View
+              style={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginTop: 10,
+              }}
+            >
+              <View
+                style={{
+                  width: '30%',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  gap: 10,
+                }}
+              >
+                <BouncyCheckbox
+                  size={20}
+                  fillColor="#9C27B0"
+                  unFillColor="#F7F5FF"
+                  style={{ width: '70%' }}
+                  text="Cow"
+                  iconStyle={{ borderColor: '#9C27B0' }}
+                  innerIconStyle={{ borderWidth: 2 }}
+                  textContainerStyle={{ marginLeft: 4 }}
+                  textStyle={{
+                    color: '#000',
+                    fontSize: 16,
+                    textDecorationLine: 'none',
+                  }}
+                  isChecked={customer?.cowMilk?.activeCowMilk}
+                  onPress={isChecked => {
+                    setCustomer(prev => ({
+                      ...prev,
+                      cowMilk: {
+                        ...prev.cowMilk,
+                        activeCowMilk: isChecked,
+                      },
+                    }));
+                    if (!isChecked) {
+                      setCustomer(prev => ({
+                        ...prev,
+                        cowMilk: {
+                          ...prev.cowMilk,
+                          morningTimeMilk: isChecked,
+                          eveningTimeMilk: isChecked,
+                          fixedAmount: isChecked,
+                          fatAmount: isChecked,
+                          snfAmount: isChecked,
+                        },
+                      }));
+                    }
+                  }}
+                />
+                <FaIcon name="arrows-h" size={16} />
+              </View>
+              <BouncyCheckbox
+                size={20}
+                fillColor="#9C27B0"
+                unFillColor="#F7F5FF"
+                style={{ width: '20%' }}
+                text="Fixed"
+                iconStyle={{ borderColor: '#9C27B0' }}
+                innerIconStyle={{ borderWidth: 2 }}
+                textContainerStyle={{ marginLeft: 4 }}
+                textStyle={{
+                  color: '#000',
+                  fontSize: 16,
+                  textDecorationLine: 'none',
+                }}
+                isChecked={customer?.cowMilk?.fixedAmount}
+                onPress={isChecked => {
+                  setCustomer(prev => ({
+                    ...prev,
+                    cowMilk: {
+                      ...prev.cowMilk,
+                      fixedAmount: isChecked,
+                      fatAmount: false,
+                      snfAmount: false,
+                    },
+                  }));
+                }}
+              />
+              <BouncyCheckbox
+                size={20}
+                fillColor="#9C27B0"
+                unFillColor="#F7F5FF"
+                style={{ width: '20%' }}
+                text="Fat"
+                iconStyle={{ borderColor: '#9C27B0' }}
+                innerIconStyle={{ borderWidth: 2 }}
+                textContainerStyle={{ marginLeft: 4 }}
+                textStyle={{
+                  color: '#000',
+                  fontSize: 16,
+                  textDecorationLine: 'none',
+                }}
+                isChecked={customer?.cowMilk?.fatAmount}
+                onPress={isChecked => {
+                  setCustomer(prev => ({
+                    ...prev,
+                    cowMilk: {
+                      ...prev.cowMilk,
+                      fatAmount: isChecked,
+                      fixedAmount: false,
+                      snfAmount: false,
+                    },
+                  }));
+                }}
+              />
+              <BouncyCheckbox
+                size={20}
+                fillColor="#9C27B0"
+                unFillColor="#F7F5FF"
+                style={{ width: '20%' }}
+                text="SNF"
+                iconStyle={{ borderColor: '#9C27B0' }}
+                innerIconStyle={{ borderWidth: 2 }}
+                textContainerStyle={{ marginLeft: 4 }}
+                textStyle={{
+                  color: '#000',
+                  fontSize: 16,
+                  textDecorationLine: 'none',
+                }}
+                isChecked={customer?.cowMilk?.snfAmount}
+                onPress={isChecked => {
+                  setCustomer(prev => ({
+                    ...prev,
+                    cowMilk: {
+                      ...prev.cowMilk,
+                      snfAmount: isChecked,
+                      fixedAmount: false,
+                      fatAmount: false,
+                    },
+                  }));
+                }}
+              />
+            </View>
             <View style={styles.stockContainer}>
               <View style={styles.inputBox}>
                 <TextInput
@@ -496,6 +858,188 @@ const Customers = () => {
               </View>
             </View>
 
+            {customer?.buffaloMilk?.activeBuffaloMilk && (
+              <View style={styles.stockContainer}>
+                <View
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginTop: 10,
+                    gap: 10,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: '40%',
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      gap: 10,
+                    }}
+                  >
+                    <Text style={{ color: '#9C27B0', fontWeight: 700 }}>
+                      Buffalo Milk Time
+                    </Text>
+                    <FaIcon name="arrows-h" size={16} />
+                  </View>
+
+                  <View
+                    style={{
+                      width: '60%',
+                      display: 'flex',
+                      flexDirection: 'row',
+                      gap: 1,
+                    }}
+                  >
+                    <BouncyCheckbox
+                      size={25}
+                      fillColor="#9C27B0"
+                      unFillColor="#F7F5FF"
+                      style={{ width: '50%' }}
+                      text="Morning"
+                      iconStyle={{ borderColor: '#9C27B0' }}
+                      innerIconStyle={{ borderWidth: 2 }}
+                      textContainerStyle={{ marginLeft: 6 }}
+                      textStyle={{
+                        color: '#000',
+                        fontSize: 16,
+                        textDecorationLine: 'none',
+                      }}
+                      isChecked={customer?.buffaloMilk?.morningTimeMilk}
+                      onPress={isChecked => {
+                        setCustomer(prev => ({
+                          ...prev,
+                          buffaloMilk: {
+                            ...prev.buffaloMilk,
+                            morningTimeMilk: isChecked,
+                          },
+                        }));
+                      }}
+                    />
+                    <BouncyCheckbox
+                      size={25}
+                      fillColor="#9C27B0"
+                      unFillColor="#F7F5FF"
+                      style={{ width: '50%' }}
+                      text="Evening"
+                      iconStyle={{ borderColor: '#9C27B0' }}
+                      innerIconStyle={{ borderWidth: 2 }}
+                      textContainerStyle={{ marginLeft: 6 }}
+                      textStyle={{
+                        color: '#000',
+                        fontSize: 16,
+                        textDecorationLine: 'none',
+                      }}
+                      isChecked={customer?.buffaloMilk?.eveningTimeMilk}
+                      onPress={isChecked => {
+                        setCustomer(prev => ({
+                          ...prev,
+                          buffaloMilk: {
+                            ...prev.buffaloMilk,
+                            eveningTimeMilk: isChecked,
+                          },
+                        }));
+                      }}
+                    />
+                  </View>
+                </View>
+              </View>
+            )}
+            {customer?.cowMilk?.activeCowMilk && (
+              <View style={styles.stockContainer}>
+                <View
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginTop: 10,
+                    gap: 10,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: '40%',
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      gap: 10,
+                    }}
+                  >
+                    <Text style={{ color: '#9C27B0', fontWeight: 700 }}>
+                      Cow Milk Time
+                    </Text>
+                    <FaIcon name="arrows-h" size={16} />
+                  </View>
+                  <View
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      flexDirection: 'row',
+                      gap: 1,
+                    }}
+                  >
+                    <BouncyCheckbox
+                      size={25}
+                      fillColor="#9C27B0"
+                      unFillColor="#F7F5FF"
+                      style={{ width: '30%' }}
+                      text="Morning"
+                      iconStyle={{ borderColor: '#9C27B0' }}
+                      innerIconStyle={{ borderWidth: 2 }}
+                      textContainerStyle={{ marginLeft: 6 }}
+                      textStyle={{
+                        color: '#000',
+                        fontSize: 16,
+                        textDecorationLine: 'none',
+                      }}
+                      isChecked={customer?.cowMilk?.morningTimeMilk}
+                      onPress={isChecked => {
+                        setCustomer(prev => ({
+                          ...prev,
+                          cowMilk: {
+                            ...prev.cowMilk,
+                            morningTimeMilk: isChecked,
+                          },
+                        }));
+                      }}
+                    />
+                    <BouncyCheckbox
+                      size={25}
+                      fillColor="#9C27B0"
+                      unFillColor="#F7F5FF"
+                      style={{ width: '30%' }}
+                      text="Evening"
+                      iconStyle={{ borderColor: '#9C27B0' }}
+                      innerIconStyle={{ borderWidth: 2 }}
+                      textContainerStyle={{ marginLeft: 6 }}
+                      textStyle={{
+                        color: '#000',
+                        fontSize: 16,
+                        textDecorationLine: 'none',
+                      }}
+                      isChecked={customer?.cowMilk?.eveningTimeMilk}
+                      onPress={isChecked => {
+                        setCustomer(prev => ({
+                          ...prev,
+                          cowMilk: {
+                            ...prev.cowMilk,
+                            eveningTimeMilk: isChecked,
+                          },
+                        }));
+                      }}
+                    />
+                  </View>
+                </View>
+              </View>
+            )}
+
             <View style={styles.stockContainer}>
               <TouchableOpacity
                 style={[styles.button, { marginTop: 20 }]}
@@ -588,8 +1132,10 @@ const styles = StyleSheet.create({
     width: '50%',
     height: '100%',
     display: 'flex',
-    justifyContent: 'center',
     paddingLeft: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   cardTwo: {
     width: '50%',
@@ -692,5 +1238,27 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
+  },
+  timeContainer: {
+    marginLeft: 5,
+    flexDirection: 'row',
+    gap: 10, // spacing between circles (or use marginRight)
+  },
+
+  circle: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: '#5086E7',
+    borderRadius: 20, // makes it a circle
+    // backgroundColor: '#5086E7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  timeText: {
+    color: '#5086E7',
+    fontWeight: '700',
+    fontSize: 12,
   },
 });

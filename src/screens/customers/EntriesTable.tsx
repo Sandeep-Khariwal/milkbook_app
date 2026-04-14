@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Image,
   Modal,
@@ -23,11 +23,11 @@ const EntriesTable = (props: {
   userId: string;
   isCustomer: boolean;
   customer: {
+    _id: string;
     name: string;
     buffaloRate: number;
     cowRate: number;
     phoneNumber: string;
-    _id: string;
   };
   userType: string;
   findTotalWeight?: (wt: number) => void;
@@ -54,6 +54,14 @@ const EntriesTable = (props: {
     timeZone: '',
     date: new Date(),
   });
+    const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    // Component open hote hi bottom pe scroll karega
+    setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 300);
+  }, []);
 
   useEffect(() => {
     if (props.userId) {
@@ -73,6 +81,8 @@ const EntriesTable = (props: {
       const res = await fetch(`${BASE_URL}/entry/${id}?${query}`);
       const { data } = await res.json();
       if (data.length) {
+        console.log("data : ",data);
+        
         const totalWeight = data.reduce((acc: number, curr: any) => {
           acc = acc + curr.weight;
           return acc;
@@ -99,6 +109,7 @@ const EntriesTable = (props: {
 
 const tableHead = [
   'Date & Time',
+  'Animal',
   'Weight',
   ...(props.userType === 'farmer' ? ['FAT'] : []),
   'Amount',
@@ -108,14 +119,15 @@ const tableHead = [
 const tableData = allEntries.map(ent => [
   // Date + Time together
   `${formatDate(new Date(ent.date))}  ${ent.timeZone}`,
+   ` ${ent.isBuffalo?"BF":"CW"} `,
 
-  ent.weight,
+  ent.weight  ,
 
   // FAT only for farmer
   ...(props.userType === 'farmer' ? [ent.fat] : []),
 
   // Amount for ALL
-  Number(ent.amount).toFixed(2),
+    Number(ent.amount).toFixed(2) ,
 
   // Action only for admin
   ...(firm.role === 'admin'
@@ -235,7 +247,7 @@ const tableData = allEntries.map(ent => [
   if (isLoading) return <LoadingOverlay visible />;
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} ref={scrollRef}>
       {/* ================= FILTER SECTION ================= */}
       <View style={styles.filterRow}>
         {/* FROM DATE */}

@@ -19,11 +19,27 @@ import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
 
 const AddEntryAndSale = (props: {
   customer: {
+    _id: string;
     name: string;
     buffaloRate: number;
     cowRate: number;
     phoneNumber: string;
-    _id: string;
+    cowMilk?: {
+      activeCowMilk: boolean;
+      fixedAmount: boolean;
+      fatAmount: boolean;
+      snfAmount: boolean;
+      morningTimeMilk: boolean;
+      eveningTimeMilk: boolean;
+    };
+    buffaloMilk?: {
+      activeBuffaloMilk: boolean;
+      fixedAmount: boolean;
+      fatAmount: boolean;
+      snfAmount: boolean;
+      morningTimeMilk: boolean;
+      eveningTimeMilk: boolean;
+    };
   };
   userType: string;
   dataUpdate: () => void;
@@ -284,6 +300,9 @@ const AddEntryAndSale = (props: {
             </View>
 
             <View style={styles.IconContainer}>
+              {
+                props.customer.buffaloMilk.activeBuffaloMilk && 
+
               <TouchableOpacity
                 style={[styles.iconWrapper, isBuffalo && styles.selected]}
                 onPress={() => setIsBuffalo(true)}
@@ -293,6 +312,9 @@ const AddEntryAndSale = (props: {
                   style={styles.icon}
                 />
               </TouchableOpacity>
+              }
+              {
+                props.customer.cowMilk.activeCowMilk && 
               <TouchableOpacity
                 style={[styles.iconWrapper, !isBuffalo && styles.selected]}
                 onPress={() => setIsBuffalo(false)}
@@ -302,6 +324,7 @@ const AddEntryAndSale = (props: {
                   style={styles.icon}
                 />
               </TouchableOpacity>
+              }
             </View>
 
             <View
@@ -311,7 +334,7 @@ const AddEntryAndSale = (props: {
                 onPress={() => weightRef.current?.focus()}
                 style={[
                   styles.inputBox,
-                  { width: props.userType === 'farmer' ? '45%' : '95%' },
+                  { width: props.userType === 'farmer' && (props.customer.buffaloMilk.fatAmount || props.customer.cowMilk.fatAmount) ? '45%' : '95%' },
                 ]}
               >
                 <TextInput
@@ -328,7 +351,7 @@ const AddEntryAndSale = (props: {
                   placeholder="Weight"
                 />
               </TouchableOpacity>
-              {props.userType === 'farmer' && (
+              {props.userType === 'farmer' && (props.customer.buffaloMilk.fatAmount || props.customer.cowMilk.fatAmount) && (
                 <View style={styles.inputBox}>
                   <TextInput
                     editable

@@ -31,6 +31,9 @@ import FeIcon from 'react-native-vector-icons/Feather';
 import { BASE_URL } from '../../token/tokenStorage';
 import LoadingOverlay from '../HelperFunction/LoadingOverlay';
 import { setFirmDetails } from '../../redux/slices/firmSlice';
+import SubscriptionPlan from '../screens/admin/SubscriptionPlan';
+import { useNavigation } from '@react-navigation/native';
+import DairyBusinessList from '../screens/admin/DiaryBussinessList';
 
 const Stack = createStackNavigator();
 
@@ -222,8 +225,11 @@ function CustomDrawerContent(props: any) {
 }
 
 const AdminDrawer = () => {
+  const firm = useSelector((state: any) => state.firm.value);
+  const initialScreen = firm.subscriptionExp ? 'Plans' : 'HomePage';
   return (
     <Drawer.Navigator
+      initialRouteName={initialScreen}
       id="admin-drawer"
       drawerContent={props => <CustomDrawerContent {...props} />}
       screenOptions={({ navigation }) => ({
@@ -276,6 +282,18 @@ const AdminDrawer = () => {
         component={DeletedUsers}
         options={{ title: 'Deleted Users' }}
       />
+        <Drawer.Screen
+          name="Plans"
+          component={SubscriptionPlan}
+          options={{ title: 'Subscription Plans' }}
+        />
+      {firm.id === 'FIRM-4cb29350-6863-4ad7-bb17-d1f885ba34c7' && (
+        <Drawer.Screen
+          name="business"
+          component={DairyBusinessList}
+          options={{ title: 'All Diary Business' }}
+        />
+      )}
     </Drawer.Navigator>
   );
 };

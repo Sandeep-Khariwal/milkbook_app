@@ -9,14 +9,16 @@ import {
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import { BASE_URL } from '../../../token/tokenStorage';
+import { BASE_URL, getToken } from '../../../token/tokenStorage';
 import { useSelector } from 'react-redux';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
-import FaIcon from 'react-native-vector-icons/Ionicons';
+import FaIcon from 'react-native-vector-icons/FontAwesome';
 import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
+import BouncyCheckbox from 'react-native-bouncy-checkbox';
+import { Farmer } from '../../interface';
 
 const Farmers = () => {
   const navigation = useNavigation<any>();
@@ -24,45 +26,33 @@ const Farmers = () => {
   const firm = useSelector((state: any) => state.firm.value);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [Farmer, setFarmer] = useState<{
-    name: string;
-    phoneNumber: string;
-    password: string;
-    cowRate: string;
-    buffaloRate: string;
-    userCode: string;
-    _id: string;
-  }>({
+  const [Farmer, setFarmer] = useState<Farmer>({
     name: '',
     phoneNumber: '',
     password: '',
     buffaloRate: '',
     cowRate: '',
     userCode: '',
+    cowMilk: {
+      activeCowMilk: false,
+      fixedAmount: false,
+      fatAmount: false,
+      snfAmount: false,
+      morningTimeMilk: false,
+      eveningTimeMilk: false,
+    },
+    buffaloMilk: {
+      activeBuffaloMilk: false,
+      fixedAmount: false,
+      fatAmount: false,
+      snfAmount: false,
+      morningTimeMilk: false,
+      eveningTimeMilk: false,
+    },
     _id: '',
   });
-  const [allFarmer, setAllFarmer] = useState<
-    {
-      name: string;
-      buffaloRate: string;
-      cowRate: string;
-      phoneNumber: string;
-      userCode: string;
-      milkUpdated: boolean;
-      _id: string;
-    }[]
-  >([]);
-  const [allShowFarmer, setAllShowFarmer] = useState<
-    {
-      name: string;
-      buffaloRate: string;
-      cowRate: string;
-      phoneNumber: string;
-      userCode: string;
-      milkUpdated: boolean;
-      _id: string;
-    }[]
-  >([]);
+  const [allFarmer, setAllFarmer] = useState<Farmer[]>([]);
+  const [allShowFarmer, setAllShowFarmer] = useState<Farmer[]>([]);
   // ref
   const bottomSheetRef = useRef<BottomSheet>(null);
   const bottomSheetRefDelete = useRef<BottomSheet>(null);
@@ -70,46 +60,40 @@ const Farmers = () => {
   const [bottomSheetDeleteIndex, setBottomSheetDeleteIndex] =
     useState<boolean>(false);
 
-  const [selectedFarmer, setSelectedFarmer] = useState<{
-    name: string;
-    phoneNumber: string;
-    userCode: string;
-    buffaloRate: number;
-    cowRate: number;
-    _id: string;
-  }>({
-    name: '',
-    phoneNumber: '',
-    _id: '',
-    buffaloRate: 0,
-    cowRate: 0,
-    userCode: '',
-  });
+  const [selectedFarmer, setSelectedFarmer] = useState<Farmer>(null);
 
   const [isEditFarmer, setIsEditFarmer] = useState<boolean>(false);
   const isFocused = useIsFocused();
   useEffect(() => {
+    if (firm.subscriptionExp) {
+      navigation.navigate('Plans');
+    }
     getFarmers();
   }, [isFocused]);
 
   const getFarmers = async () => {
     setIsLoading(true);
+    const token = await getToken();
+    //  Authorization: `Bearer ${token}`,
     await fetch(`${BASE_URL}/user/getAllFarmers/${firm.id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
       },
     })
       .then(async (res: any) => {
         const { users } = await res.json();
-        const data = users.map((u: any) => {
-          const usr = u;
-          return {
-            ...usr,
-            cowRate: String(usr.cowRate),
-            buffaloRate: String(usr.buffaloRate),
-          };
-        }).sort((a, b) => Number(a.userCode) - Number(b.userCode));
+        const data = users
+          .map((u: any) => {
+            const usr = u;
+            return {
+              ...usr,
+              cowRate: String(usr.cowRate),
+              buffaloRate: String(usr.buffaloRate),
+            };
+          })
+          .sort((a, b) => Number(a.userCode) - Number(b.userCode));
 
         setAllFarmer(data);
         setAllShowFarmer(data);
@@ -288,6 +272,22 @@ const Farmers = () => {
                   >
                     {Farmer.name} ({Farmer.userCode})
                   </Text>
+
+                  <View style={styles.timeContainer}>
+                    {(Farmer?.cowMilk?.morningTimeMilk ||
+                      Farmer?.buffaloMilk?.morningTimeMilk) && (
+                      <View style={styles.circle}>
+                        <Text style={styles.timeText}>M</Text>
+                      </View>
+                    )}
+
+                    {(Farmer?.cowMilk?.eveningTimeMilk ||
+                      Farmer?.buffaloMilk?.eveningTimeMilk) && (
+                      <View style={styles.circle}>
+                        <Text style={styles.timeText}>E</Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
                 <View style={styles.cardTwo}>
                   <Icon
@@ -343,16 +343,25 @@ const Farmers = () => {
                 buffaloRate: '',
                 cowRate: '',
                 userCode: '',
+                cowMilk: {
+                  activeCowMilk: false,
+                  fixedAmount: false,
+                  fatAmount: false,
+                  snfAmount: false,
+                  morningTimeMilk: false,
+                  eveningTimeMilk: false,
+                },
+                buffaloMilk: {
+                  activeBuffaloMilk: false,
+                  fixedAmount: false,
+                  fatAmount: false,
+                  snfAmount: false,
+                  morningTimeMilk: false,
+                  eveningTimeMilk: false,
+                },
                 _id: '',
               });
-            setSelectedFarmer({
-              name: '',
-              phoneNumber: '',
-              userCode: '',
-              _id: '',
-              buffaloRate: 0,
-              cowRate: 0,
-            });
+            setSelectedFarmer(null);
             setBottomSheetIndex(true);
           }}
         >
@@ -386,7 +395,292 @@ const Farmers = () => {
                 }}
               />
             </View>
-            <View style={styles.stockContainer}>
+            <View
+              style={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <View
+                style={{
+                  width: '30%',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  gap: 10,
+                }}
+              >
+                <BouncyCheckbox
+                  size={20}
+                  fillColor="#9C27B0"
+                  unFillColor="#F7F5FF"
+                  style={{ width: '70%' }}
+                  text="Buffalo"
+                  iconStyle={{ borderColor: '#9C27B0' }}
+                  innerIconStyle={{ borderWidth: 2 }}
+                  textContainerStyle={{ marginLeft: 4 }}
+                  textStyle={{
+                    color: '#000',
+                    fontSize: 16,
+                    textDecorationLine: 'none',
+                  }}
+                  isChecked={Farmer?.buffaloMilk?.activeBuffaloMilk}
+                  onPress={isChecked => {
+                    setFarmer(prev => ({
+                      ...prev,
+                      buffaloMilk: {
+                        ...prev.buffaloMilk,
+                        activeBuffaloMilk: isChecked,
+                      },
+                    }));
+
+                    if (!isChecked) {
+                      setFarmer(prev => ({
+                        ...prev,
+                        buffaloMilk: {
+                          ...prev.buffaloMilk,
+                          morningTimeMilk: isChecked,
+                          eveningTimeMilk: isChecked,
+                          fixedAmount: isChecked,
+                          fatAmount: isChecked,
+                          snfAmount: isChecked,
+                        },
+                      }));
+                    }
+                  }}
+                />
+                <FaIcon name="arrows-h" size={16} />
+              </View>
+
+              <BouncyCheckbox
+                size={20}
+                fillColor="#9C27B0"
+                unFillColor="#F7F5FF"
+                style={{ width: '20%' }}
+                text="Fixed"
+                iconStyle={{ borderColor: '#9C27B0' }}
+                innerIconStyle={{ borderWidth: 2 }}
+                textContainerStyle={{ marginLeft: 4 }}
+                textStyle={{
+                  color: '#000',
+                  fontSize: 16,
+                  textDecorationLine: 'none',
+                }}
+                isChecked={Farmer?.buffaloMilk?.fixedAmount}
+                onPress={isChecked => {
+                  setFarmer(prev => ({
+                    ...prev,
+                    buffaloMilk: {
+                      ...prev.buffaloMilk,
+                      fixedAmount: isChecked,
+                      fatAmount: false,
+                      snfAmount: false,
+                    },
+                  }));
+                }}
+              />
+              <BouncyCheckbox
+                size={20}
+                fillColor="#9C27B0"
+                unFillColor="#F7F5FF"
+                style={{ width: '20%' }}
+                text="Fat"
+                iconStyle={{ borderColor: '#9C27B0' }}
+                innerIconStyle={{ borderWidth: 2 }}
+                textContainerStyle={{ marginLeft: 4 }}
+                textStyle={{
+                  color: '#000',
+                  fontSize: 16,
+                  textDecorationLine: 'none',
+                }}
+                isChecked={Farmer?.buffaloMilk?.fatAmount}
+                onPress={isChecked => {
+                  setFarmer(prev => ({
+                    ...prev,
+                    buffaloMilk: {
+                      ...prev.buffaloMilk,
+                      fatAmount: isChecked,
+                      fixedAmount: false,
+                      snfAmount: false,
+                    },
+                  }));
+                }}
+              />
+              <BouncyCheckbox
+                size={20}
+                fillColor="#9C27B0"
+                unFillColor="#F7F5FF"
+                style={{ width: '20%' }}
+                text="SNF"
+                iconStyle={{ borderColor: '#9C27B0' }}
+                innerIconStyle={{ borderWidth: 2 }}
+                textContainerStyle={{ marginLeft: 4 }}
+                textStyle={{
+                  color: '#000',
+                  fontSize: 16,
+                  textDecorationLine: 'none',
+                }}
+                isChecked={Farmer?.buffaloMilk?.snfAmount}
+                onPress={isChecked => {
+                  setFarmer(prev => ({
+                    ...prev,
+                    buffaloMilk: {
+                      ...prev.buffaloMilk,
+                      snfAmount: isChecked,
+                      fixedAmount: false,
+                      fatAmount: false,
+                    },
+                  }));
+                }}
+              />
+            </View>
+            <View
+              style={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginTop: 10,
+              }}
+            >
+              <View
+                style={{
+                  width: '30%',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  gap: 10,
+                }}
+              >
+                <BouncyCheckbox
+                  size={20}
+                  fillColor="#9C27B0"
+                  unFillColor="#F7F5FF"
+                  style={{ width: '70%' }}
+                  text="Cow"
+                  iconStyle={{ borderColor: '#9C27B0' }}
+                  innerIconStyle={{ borderWidth: 2 }}
+                  textContainerStyle={{ marginLeft: 4 }}
+                  textStyle={{
+                    color: '#000',
+                    fontSize: 16,
+                    textDecorationLine: 'none',
+                  }}
+                  isChecked={Farmer?.cowMilk?.activeCowMilk}
+                  onPress={isChecked => {
+                    setFarmer(prev => ({
+                      ...prev,
+                      cowMilk: {
+                        ...prev.cowMilk,
+                        activeCowMilk: isChecked,
+                      },
+                    }));
+                    if (!isChecked) {
+                      setFarmer(prev => ({
+                        ...prev,
+                        cowMilk: {
+                          ...prev.cowMilk,
+                          morningTimeMilk: isChecked,
+                          eveningTimeMilk: isChecked,
+                          fixedAmount: isChecked,
+                          fatAmount: isChecked,
+                          snfAmount: isChecked,
+                        },
+                      }));
+                    }
+                  }}
+                />
+                <FaIcon name="arrows-h" size={16} />
+              </View>
+              <BouncyCheckbox
+                size={20}
+                fillColor="#9C27B0"
+                unFillColor="#F7F5FF"
+                style={{ width: '20%' }}
+                text="Fixed"
+                iconStyle={{ borderColor: '#9C27B0' }}
+                innerIconStyle={{ borderWidth: 2 }}
+                textContainerStyle={{ marginLeft: 4 }}
+                textStyle={{
+                  color: '#000',
+                  fontSize: 16,
+                  textDecorationLine: 'none',
+                }}
+                isChecked={Farmer?.cowMilk?.fixedAmount}
+                onPress={isChecked => {
+                  setFarmer(prev => ({
+                    ...prev,
+                    cowMilk: {
+                      ...prev.cowMilk,
+                      fixedAmount: isChecked,
+                      fatAmount: false,
+                      snfAmount: false,
+                    },
+                  }));
+                }}
+              />
+              <BouncyCheckbox
+                size={20}
+                fillColor="#9C27B0"
+                unFillColor="#F7F5FF"
+                style={{ width: '20%' }}
+                text="Fat"
+                iconStyle={{ borderColor: '#9C27B0' }}
+                innerIconStyle={{ borderWidth: 2 }}
+                textContainerStyle={{ marginLeft: 4 }}
+                textStyle={{
+                  color: '#000',
+                  fontSize: 16,
+                  textDecorationLine: 'none',
+                }}
+                isChecked={Farmer?.cowMilk?.fatAmount}
+                onPress={isChecked => {
+                  setFarmer(prev => ({
+                    ...prev,
+                    cowMilk: {
+                      ...prev.cowMilk,
+                      fatAmount: isChecked,
+                      fixedAmount: false,
+                      snfAmount: false,
+                    },
+                  }));
+                }}
+              />
+              <BouncyCheckbox
+                size={20}
+                fillColor="#9C27B0"
+                unFillColor="#F7F5FF"
+                style={{ width: '20%' }}
+                text="SNF"
+                iconStyle={{ borderColor: '#9C27B0' }}
+                innerIconStyle={{ borderWidth: 2 }}
+                textContainerStyle={{ marginLeft: 4 }}
+                textStyle={{
+                  color: '#000',
+                  fontSize: 16,
+                  textDecorationLine: 'none',
+                }}
+                isChecked={Farmer?.cowMilk?.snfAmount}
+                onPress={isChecked => {
+                  setFarmer(prev => ({
+                    ...prev,
+                    cowMilk: {
+                      ...prev.cowMilk,
+                      snfAmount: isChecked,
+                      fixedAmount: false,
+                      fatAmount: false,
+                    },
+                  }));
+                }}
+              />
+            </View>
+            <View style={[styles.stockContainer, { marginTop: 20 }]}>
               <View style={styles.inputBox}>
                 <TextInput
                   editable
@@ -416,41 +710,63 @@ const Farmers = () => {
                 />
               </View>
             </View>
+
             <View style={styles.stockContainer}>
-              <View style={[styles.inputBox]}>
-                <TextInput
-                  editable
-                  multiline
-                  numberOfLines={4}
-                  onChangeText={text =>
-                    setFarmer(prev => ({ ...prev, buffaloRate: text }))
-                  }
-                  value={Farmer.buffaloRate}
-                  style={styles.textInput}
-                  placeholder="Buffalo Rate"
-                />
-              </View>
-              <View style={styles.inputBox}>
-                <TextInput
-                  editable
-                  multiline
-                  numberOfLines={4}
-                  onChangeText={text =>
-                    setFarmer(prev => ({ ...prev, cowRate: text }))
-                  }
-                  value={Farmer.cowRate}
-                  style={styles.textInput}
-                  placeholder="Cow Rate"
-                />
-              </View>
+              {Farmer?.buffaloMilk?.activeBuffaloMilk && (
+                <View
+                  style={[
+                    styles.inputBox,
+                    {
+                      width:
+                        Farmer?.buffaloMilk?.activeBuffaloMilk &&
+                        Farmer?.cowMilk?.activeCowMilk
+                          ? '50%'
+                          : '100%',
+                    },
+                  ]}
+                >
+                  <TextInput
+                    editable
+                    multiline
+                    numberOfLines={4}
+                    onChangeText={text =>
+                      setFarmer(prev => ({ ...prev, buffaloRate: text }))
+                    }
+                    value={Farmer.buffaloRate}
+                    style={styles.textInput}
+                    placeholder="Buffalo Rate"
+                  />
+                </View>
+              )}
+              {Farmer?.cowMilk?.activeCowMilk && (
+                <View
+                  style={[
+                    styles.inputBox,
+                    {
+                      width:
+                        Farmer?.buffaloMilk?.activeBuffaloMilk &&
+                        Farmer?.cowMilk?.activeCowMilk
+                          ? '50%'
+                          : '100%',
+                    },
+                  ]}
+                >
+                  <TextInput
+                    editable
+                    multiline
+                    numberOfLines={4}
+                    onChangeText={text =>
+                      setFarmer(prev => ({ ...prev, cowRate: text }))
+                    }
+                    value={Farmer.cowRate}
+                    style={styles.textInput}
+                    placeholder="Cow Rate"
+                  />
+                </View>
+              )}
             </View>
             <View style={styles.stockContainer}>
-              <View
-                style={[
-                  styles.inputBox,
-                  { width:  '50%' },
-                ]}
-              >
+              <View style={[styles.inputBox, { width: '50%' }]}>
                 <TextInput
                   editable
                   multiline
@@ -464,21 +780,203 @@ const Farmers = () => {
                   placeholder="Code"
                 />
               </View>
-                <View style={styles.inputBox}>
-                  <TextInput
-                    editable
-                    multiline
-                    numberOfLines={4}
-                    maxLength={40}
-                    onChangeText={text =>
-                      setFarmer(prev => ({ ...prev, password: text }))
-                    }
-                    value={Farmer.password}
-                    style={styles.textInput}
-                    placeholder="Enter Password"
-                  />
-                </View>
+              <View style={styles.inputBox}>
+                <TextInput
+                  editable
+                  multiline
+                  numberOfLines={4}
+                  maxLength={40}
+                  onChangeText={text =>
+                    setFarmer(prev => ({ ...prev, password: text }))
+                  }
+                  value={Farmer.password}
+                  style={styles.textInput}
+                  placeholder="Enter Password"
+                />
+              </View>
             </View>
+
+            {Farmer?.buffaloMilk?.activeBuffaloMilk && (
+              <View style={styles.stockContainer}>
+                <View
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginTop: 10,
+                    gap: 10,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: '40%',
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      gap: 10,
+                    }}
+                  >
+                    <Text style={{ color: '#9C27B0', fontWeight: 700 }}>
+                      Buffalo Milk Time
+                    </Text>
+                    <FaIcon name="arrows-h" size={16} />
+                  </View>
+
+                  <View
+                    style={{
+                      width: '60%',
+                      display: 'flex',
+                      flexDirection: 'row',
+                      gap: 1,
+                    }}
+                  >
+                    <BouncyCheckbox
+                      size={25}
+                      fillColor="#9C27B0"
+                      unFillColor="#F7F5FF"
+                      style={{ width: '50%' }}
+                      text="Morning"
+                      iconStyle={{ borderColor: '#9C27B0' }}
+                      innerIconStyle={{ borderWidth: 2 }}
+                      textContainerStyle={{ marginLeft: 6 }}
+                      textStyle={{
+                        color: '#000',
+                        fontSize: 16,
+                        textDecorationLine: 'none',
+                      }}
+                      isChecked={Farmer?.buffaloMilk?.morningTimeMilk}
+                      onPress={isChecked => {
+                        setFarmer(prev => ({
+                          ...prev,
+                          buffaloMilk: {
+                            ...prev.buffaloMilk,
+                            morningTimeMilk: isChecked,
+                          },
+                        }));
+                      }}
+                    />
+                    <BouncyCheckbox
+                      size={25}
+                      fillColor="#9C27B0"
+                      unFillColor="#F7F5FF"
+                      style={{ width: '50%' }}
+                      text="Evening"
+                      iconStyle={{ borderColor: '#9C27B0' }}
+                      innerIconStyle={{ borderWidth: 2 }}
+                      textContainerStyle={{ marginLeft: 6 }}
+                      textStyle={{
+                        color: '#000',
+                        fontSize: 16,
+                        textDecorationLine: 'none',
+                      }}
+                      isChecked={Farmer?.buffaloMilk?.eveningTimeMilk}
+                      onPress={isChecked => {
+                        setFarmer(prev => ({
+                          ...prev,
+                          buffaloMilk: {
+                            ...prev.buffaloMilk,
+                            eveningTimeMilk: isChecked,
+                          },
+                        }));
+                      }}
+                    />
+                  </View>
+                </View>
+              </View>
+            )}
+            {Farmer?.cowMilk?.activeCowMilk && (
+              <View style={styles.stockContainer}>
+                <View
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginTop: 10,
+                    gap: 10,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: '40%',
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      gap: 10,
+                    }}
+                  >
+                    <Text style={{ color: '#9C27B0', fontWeight: 700 }}>
+                      Cow Milk Time
+                    </Text>
+                    <FaIcon name="arrows-h" size={16} />
+                  </View>
+                  <View
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      flexDirection: 'row',
+                      gap: 1,
+                    }}
+                  >
+                    <BouncyCheckbox
+                      size={25}
+                      fillColor="#9C27B0"
+                      unFillColor="#F7F5FF"
+                      style={{ width: '30%' }}
+                      text="Morning"
+                      iconStyle={{ borderColor: '#9C27B0' }}
+                      innerIconStyle={{ borderWidth: 2 }}
+                      textContainerStyle={{ marginLeft: 6 }}
+                      textStyle={{
+                        color: '#000',
+                        fontSize: 16,
+                        textDecorationLine: 'none',
+                      }}
+                      isChecked={Farmer?.cowMilk?.morningTimeMilk}
+                      onPress={isChecked => {
+                        setFarmer(prev => ({
+                          ...prev,
+                          cowMilk: {
+                            ...prev.cowMilk,
+                            morningTimeMilk: isChecked,
+                          },
+                        }));
+                      }}
+                    />
+                    <BouncyCheckbox
+                      size={25}
+                      fillColor="#9C27B0"
+                      unFillColor="#F7F5FF"
+                      style={{ width: '30%' }}
+                      text="Evening"
+                      iconStyle={{ borderColor: '#9C27B0' }}
+                      innerIconStyle={{ borderWidth: 2 }}
+                      textContainerStyle={{ marginLeft: 6 }}
+                      textStyle={{
+                        color: '#000',
+                        fontSize: 16,
+                        textDecorationLine: 'none',
+                      }}
+                      isChecked={Farmer?.cowMilk?.eveningTimeMilk}
+                      onPress={isChecked => {
+                        setFarmer(prev => ({
+                          ...prev,
+                          cowMilk: {
+                            ...prev.cowMilk,
+                            eveningTimeMilk: isChecked,
+                          },
+                        }));
+                      }}
+                    />
+                  </View>
+                </View>
+              </View>
+            )}
 
             <View style={styles.stockContainer}>
               <TouchableOpacity
@@ -572,8 +1070,10 @@ const styles = StyleSheet.create({
     width: '50%',
     height: '100%',
     display: 'flex',
-    justifyContent: 'center',
     paddingLeft: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   cardTwo: {
     width: '50%',
@@ -676,5 +1176,27 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
+  },
+  timeContainer: {
+    marginLeft:5,
+    flexDirection: 'row',
+    gap: 10, // spacing between circles (or use marginRight)
+  },
+
+  circle: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: '#5086E7',
+    borderRadius: 20, // makes it a circle
+    // backgroundColor: '#5086E7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  timeText: {
+    color: '#5086E7',
+    fontWeight: '700',
+    fontSize: 12,
   },
 });

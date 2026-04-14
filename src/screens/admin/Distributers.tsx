@@ -9,11 +9,12 @@ import {
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import { BASE_URL } from '../../../token/tokenStorage';
+import { BASE_URL, getToken } from '../../../token/tokenStorage';
 import { useSelector } from 'react-redux';
 import BottomSheet from '@gorhom/bottom-sheet';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
 import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 
 const Distributers = () => {
   const firm = useSelector((state: any) => state.firm.value);
@@ -49,19 +50,30 @@ const Distributers = () => {
 
   const [isEditDistributer, setIsEditDistributer] = useState<boolean>(false);
 
+  const navigation = useNavigation<any>();
+  const isFocused = useIsFocused();
+
   useEffect(() => {
+    if (firm.subscriptionExp) {
+      navigation.navigate('Plans');
+    }
     getDistributers();
-  }, []);
+  }, [isFocused]);
+  
   const getDistributers = async () => {
     setIsLoading(true);
+    const token = await getToken();
+    //  Authorization: `Bearer ${token}`,
     await fetch(`${BASE_URL}/user/getAllDistributers/${firm.id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
       },
     })
       .then(async (res: any) => {
         const { users } = await res.json();
+
         const filterdUsers = users.filter(
           (d: any) => d.userType === 'distributer',
         );

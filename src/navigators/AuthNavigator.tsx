@@ -2,6 +2,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import React, { useState } from 'react';
 import {
   Image,
+  KeyboardAvoidingView,
   StyleSheet,
   Text,
   TextInput,
@@ -15,19 +16,16 @@ import { setFirmDetails } from '../../redux/slices/firmSlice';
 import { setCustomerDetails } from '../../redux/slices/customerSlice';
 import { setDistributerDetails } from '../../redux/slices/distributerSlice';
 import LoadingOverlay from '../HelperFunction/LoadingOverlay';
-import {
-  ALERT_TYPE,
-  Toast,
-} from 'react-native-alert-notification';
+import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import { setFarmerDetails } from '../../redux/slices/farmerSlice';
-
+import SignupScreen from '../components/Signup';
 
 export default function AuthNavigator() {
   const dispatch = useDispatch();
   const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-
+  const [showLogin, setShowLogin] = useState<boolean>(true);
 
   const Login = async () => {
     setIsLoading(true);
@@ -40,9 +38,33 @@ export default function AuthNavigator() {
     })
       .then(async (res: any) => {
         const data = await res.json();
-        const { user, token, message, status } = data;
-        
+        const { user, token, message, status, isSubscriptionExp } = data;
+
         setIsLoading(false);
+        
+        if (data.status === 403 || isSubscriptionExp) {
+          Toast.show({
+            type: ALERT_TYPE.DANGER,
+            title: 'Error',
+            textBody: `subscription expired!!`,
+          });
+
+          const userData = {
+            id: data.user._id,
+            name: data.user.name,
+          };
+          dispatch(setAdminDetails(userData));
+
+          const firmData = {
+            name: '',
+            id: '',
+            role: 'admin',
+            subscriptionExp: isSubscriptionExp,
+          };
+          dispatch(setFirmDetails(firmData));
+
+          return;
+        }
         if (status === 404) {
           Toast.show({
             type: ALERT_TYPE.DANGER,
@@ -68,6 +90,7 @@ export default function AuthNavigator() {
           name: user.firmId.name,
           id: user.firmId._id,
           role: user.userType,
+          // subscriptionExp: isSubscriptionExp
         };
 
         dispatch(setFirmDetails(firmData));
@@ -89,7 +112,7 @@ export default function AuthNavigator() {
       })
       .catch((e: any) => {
         console.log(e);
-        
+
         setIsLoading(false);
       });
   };
@@ -99,57 +122,86 @@ export default function AuthNavigator() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.logoSection}>
-        <Image source={require('../assets/logo1.png')} />
-      </View>
-      <View style={styles.formBox}>
-        <View style={styles.inputBox}>
-          <Icon
-            name="phone"
-            size={28}
-            color="#5086E7"
-            style={{ marginLeft: 10 }}
-          />
-          <TextInput
-            editable
-            multiline
-            numberOfLines={4}
-            maxLength={10}
-            onChangeText={text => setPhoneNumber(text)}
-            value={phoneNumber}
-            style={styles.textInput}
-            placeholder="Phone Number"
-          />
-        </View>
-        {/* <View style={styles.formBox}> */}
-        <View style={styles.inputBox}>
-          <Icon
-            name="lock"
-            size={28}
-            color="#5086E7"
-            style={{ marginLeft: 10 }}
-          />
-          <TextInput
-            editable
-            multiline
-            numberOfLines={4}
-            maxLength={40}
-            onChangeText={text => setPassword(text)}
-            value={password}
-            style={styles.textInput}
-            placeholder="Password"
-          />
-          {/* </View> */}
-        </View>
-      </View>
+    <>
+      {showLogin ? (
+        <View style={styles.container}>
+          <KeyboardAvoidingView>
+            <View style={styles.logoSection}>
+              <Image source={require('../assets/logo1.png')} />
+            </View>
+            <View style={styles.formBox}>
+              <View style={styles.inputBox}>
+                <Icon
+                  name="phone"
+                  size={28}
+                  color="#5086E7"
+                  style={{ marginLeft: 10 }}
+                />
+                <TextInput
+                  editable
+                  multiline
+                  numberOfLines={4}
+                  maxLength={10}
+                  onChangeText={text => setPhoneNumber(text)}
+                  value={phoneNumber}
+                  style={styles.textInput}
+                  placeholder="Phone Number"
+                />
+              </View>
+              {/* <View style={styles.formBox}> */}
+              <View style={styles.inputBox}>
+                <Icon
+                  name="lock"
+                  size={28}
+                  color="#5086E7"
+                  style={{ marginLeft: 10 }}
+                />
+                <TextInput
+                  editable
+                  multiline
+                  numberOfLines={4}
+                  maxLength={40}
+                  onChangeText={text => setPassword(text)}
+                  value={password}
+                  style={styles.textInput}
+                  placeholder="Password"
+                />
+                {/* </View> */}
+              </View>
+            </View>
+          </KeyboardAvoidingView>
 
-      <View style={styles.formBox}>
-        <TouchableOpacity style={styles.button} onPress={Login}>
-          <Text style={styles.text}>Login</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+          <View
+            style={{
+              width: '90%',
+              alignSelf: 'center',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: 5,
+              height: 50,
+            }}
+          >
+            <Text>Add Milk Business?</Text>
+            <TouchableOpacity onPress={() => setShowLogin(false)}>
+              <Text style={styles.text}>Signup</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={[styles.formBox, { marginTop: 10 }]}>
+            <TouchableOpacity style={styles.button} onPress={Login}>
+              <Text style={styles.text}>Login</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <SignupScreen
+          onClickLogin={() => {
+            setShowLogin(true);
+          }}
+        />
+      )}
+    </>
   );
 }
 
@@ -202,7 +254,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: '#5086E7',
   },

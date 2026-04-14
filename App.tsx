@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react';
 import AdminNavigator from './src/navigators/AdminNavigator';
 import CustomerNavigator from './src/navigators/CustomerNavigator';
 import DistributerNavigator from './src/navigators/DistributerNavigator';
-import { BASE_URL, getToken } from './token/tokenStorage';
+import { BASE_URL, deleteToken, getToken } from './token/tokenStorage';
 import { setFirmDetails } from './redux/slices/firmSlice';
 import { setAdminDetails } from './redux/slices/adminSlice';
 import { setCustomerDetails } from './redux/slices/customerSlice';
@@ -55,7 +55,6 @@ function AppContent() {
   }, []);
 
   const getAppToken = async () => {
-    // await deleteToken()
     setIsLoading(true);
     const token = (await getToken()) ?? '';
 
@@ -67,7 +66,35 @@ function AppContent() {
       },
     })
       .then(async (res: any) => {
-        const { user } = await res.json();
+        const data = await res.json();
+        setIsLoading(false);
+        if (data.status === 403) {
+          console.log("user : ",data.user,data.user.user.firmId._id);
+          
+          console.log('subscription expired : ', data);
+          Toast.show({
+            type: ALERT_TYPE.DANGER,
+            title: 'Error',
+            textBody: `subscription expired!!`,
+          });
+
+          // const userData = {
+          //   id: data.user._id,
+          //   name: data.user.name,
+          // };
+          // dispatch(setAdminDetails(userData));
+
+          const firmData = {
+            name: '',
+            id: data.user.firmId._id,
+            role: 'admin',
+            subscriptionExp: true,
+          };
+          dispatch(setFirmDetails(firmData));
+          return;
+        }
+
+        const { user } = data;
 
         const firmData = {
           name: user.firmId.name,
@@ -90,7 +117,6 @@ function AppContent() {
         } else if (user.userType === 'farmer') {
           dispatch(setFarmerDetails(userData));
         }
-        setIsLoading(false);
       })
       .catch((e: any) => {
         console.log(e);
