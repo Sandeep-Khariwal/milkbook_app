@@ -5,6 +5,7 @@ import CustomerHome from '../screens/customers/CustomerHome';
 import { createStackNavigator } from '@react-navigation/stack';
 import ShowHistory from '../screens/commonScreen/ShowHistory';
 import ShowAllHistory from '../screens/commonScreen/AllHistory';
+import ShowSavedBalance from '../screens/commonScreen/ShowSavedBalance';
 
 
 const Stack = createStackNavigator();
@@ -40,6 +41,7 @@ export default function CustomerNavigator() {
         name="AllHistory"
         component={ShowAllHistory}
       />
+       <Stack.Screen name="SavedBalance" component={ShowSavedBalance} />
     </Stack.Navigator>
   );
 }

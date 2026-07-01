@@ -7,10 +7,12 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import { BASE_URL } from '../../../token/tokenStorage';
-import BottomSheet from '@gorhom/bottom-sheet';
 import FeIcon from 'react-native-vector-icons/Feather';
 import { SelectList } from 'react-native-dropdown-select-list';
 import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
@@ -24,783 +26,255 @@ const AddEntryAndSale = (props: {
     buffaloRate: number;
     cowRate: number;
     phoneNumber: string;
-    cowMilk?: {
-      activeCowMilk: boolean;
-      fixedAmount: boolean;
-      fatAmount: boolean;
-      snfAmount: boolean;
-      morningTimeMilk: boolean;
-      eveningTimeMilk: boolean;
-    };
-    buffaloMilk?: {
-      activeBuffaloMilk: boolean;
-      fixedAmount: boolean;
-      fatAmount: boolean;
-      snfAmount: boolean;
-      morningTimeMilk: boolean;
-      eveningTimeMilk: boolean;
-    };
+    cowMilk?: { activeCowMilk: boolean; fatAmount: boolean; snfAmount: boolean; };
+    buffaloMilk?: { activeBuffaloMilk: boolean; fatAmount: boolean; snfAmount: boolean; };
   };
   userType: string;
   dataUpdate: () => void;
 }) => {
   const firm = useSelector((state: any) => state.firm.value);
-  const bottomSheetRefAdd = useRef<BottomSheet>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [bottomSheetAdd, setBottomSheetAdd] = useState<boolean>(false);
   const [bottomSheetSale, setBottomSheetSale] = useState<boolean>(false);
 
-  const weightRef = useRef(null);
-  const fatRef = useRef(null);
-  const snfRef = useRef(null);
-
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [milkEntry, setMilkEntry] = useState<{
-    fat: string;
-    weight: string;
-    timeZone: string;
-    _id: string;
-  }>({
-    fat: '',
-    weight: '',
-    timeZone: '',
-    _id: '',
-  });
-
-  const [stocks, setStocks] = useState<
-    { item: string; quantity: number; _id: string; price: number }[]
-  >([]);
-
+  const [milkEntry, setMilkEntry] = useState({ fat: '', clr: '', weight: '', timeZone: '', _id: '' });
+  const [stocks, setStocks] = useState<any[]>([]);
   const [selected, setSelected] = useState<string>('');
   const [selectedQuantity, setSelectedQuantity] = useState<string>('');
   const [date, setDate] = useState<Date>(new Date());
   const [saleDate, setSaleDate] = useState<Date>(new Date());
   const [open, setOpen] = useState<boolean>(false);
   const [isBuffalo, setIsBuffalo] = useState<boolean>(true);
+  const clickedRef = useRef<any>(0);
 
   useEffect(() => {
-    if (date) {
-      const nowDate = new Date(date);
-      const hours = nowDate.getHours();
-      const timeOfDay = hours < 12 ? 'M' : 'E';
-      setMilkEntry(prev => ({ ...prev, timeZone: timeOfDay }));
-    }
+    const hours = date.getHours();
+    setMilkEntry(prev => ({ ...prev, timeZone: hours < 12 ? 'Morning' : 'Evening' }));
   }, [date]);
 
   useEffect(() => {
-    getAllItems();
-  }, []);
+    if (props.customer.buffaloMilk?.activeBuffaloMilk) setIsBuffalo(true);
+    else if (props.customer.cowMilk?.activeCowMilk) setIsBuffalo(false);
+  }, [props.customer]);
+
+  useEffect(() => { getAllItems(); }, []);
 
   const getAllItems = async () => {
-    await fetch(`${BASE_URL}/firm/stocks/${firm.id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-      .then(async (res: any) => {
-        const { stocks } = await res.json();
-        setStocks(stocks);
-      })
-      .catch((e: any) => {
-        console.log(e);
-      });
+    try {
+      const res = await fetch(`${BASE_URL}/firm/stocks/${firm.id}`);
+      const data = await res.json();
+      setStocks(data.stocks || []);
+    } catch (e) { console.log(e); }
   };
 
-  const addEntry = async () => {
-    setBottomSheetAdd(false);
-    if (!milkEntry.weight) {
-      Toast.show({
-        type: ALERT_TYPE.WARNING,
-        title: 'Warning',
-        textBody: `All Fields Required!`,
-      });
+  const activeMilkConfig = isBuffalo ? props.customer.buffaloMilk : props.customer.cowMilk;
 
+  const addEntry = async () => {
+    clickedRef.current += 1;
+    if (!milkEntry.weight) {
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'Warning', textBody: `Weight is required!` });
+      clickedRef.current = 0;
       return;
     }
-    let amount;
+    if (activeMilkConfig?.snfAmount && (!milkEntry.fat || !milkEntry.clr)) {
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'Warning', textBody: `Fat and CLR are required!` });
+      clickedRef.current = 0;
+      return;
+    }
 
-    if (milkEntry.fat) {
-      if (isBuffalo) {
-        amount =
-          (Number(milkEntry.fat) *
-            Number(milkEntry.weight) *
-            Number(props.customer.buffaloRate)) /
-          100;
-      } else {
-        amount =
-          (Number(milkEntry.fat) *
-            Number(milkEntry.weight) *
-            Number(props.customer.cowRate)) /
-          100;
-      }
+    setIsLoading(true);
+    let amount = 0;
+    let calculatedSnf = 0;
+    const rate = isBuffalo ? props.customer.buffaloRate : props.customer.cowRate;
+    const fatVal = Number(milkEntry.fat) || 0;
+    const clrVal = Number(milkEntry.clr) || 0;
+    const weightVal = Number(milkEntry.weight) || 0;
+    const rateVal = Number(rate) || 0;
+
+    if (activeMilkConfig?.snfAmount) {
+      calculatedSnf = (clrVal / 4) + (0.21 * fatVal) + 0.36;
+      amount = (calculatedSnf * weightVal * rateVal) / 100;
+    } else if (activeMilkConfig?.fatAmount && milkEntry.fat) {
+      amount = (fatVal * weightVal * rateVal) / 100;
     } else {
-      if (isBuffalo) {
-        amount = Number(milkEntry.weight) * Number(props.customer.buffaloRate);
-      } else {
-        amount = Number(milkEntry.weight) * Number(props.customer.cowRate);
-      }
+      amount = weightVal * rateVal;
     }
 
     const payload = {
       weight: milkEntry.weight,
-      fat: Number(milkEntry.fat) ?? 0,
-      rate: isBuffalo
-        ? Number(props.customer.buffaloRate)
-        : Number(props.customer.cowRate),
-      timeZone: milkEntry.timeZone,
-      amount: amount,
+      fat: fatVal,
+      clr: clrVal,
+      snf: Number(calculatedSnf.toFixed(2)),
+      rate: rateVal,
+      timeZone: milkEntry.timeZone === 'Morning' ? 'M' : 'E',
+      amount: Number(amount.toFixed(2)),
       customer: props.customer._id,
       firm: firm.id,
-      date: date,
-      _id: milkEntry._id,
-      isBuffalo: isBuffalo,
+      date: new Date(date),
+      isBuffalo,
     };
 
-    setIsLoading(true);
-
-    await fetch(`${BASE_URL}/entry/create`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
-      .then(async (res: any) => {
-        setIsLoading(false);
-
-        setMilkEntry({
-          fat: '',
-          weight: '',
-          timeZone: '',
-          _id: '',
-        });
-        Toast.show({
-          type: ALERT_TYPE.SUCCESS,
-          title: 'Success',
-          textBody: `Milk Added`,
-        });
-        props.dataUpdate();
-      })
-      .catch((e: any) => {
-        console.log(e);
-        setIsLoading(false);
+    try {
+      await fetch(`${BASE_URL}/entry/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
-    bottomSheetRefAdd.current?.close();
+      setBottomSheetAdd(false);
+      setMilkEntry({ fat: '', clr: '', weight: '', timeZone: '', _id: '' });
+      Toast.show({ type: ALERT_TYPE.SUCCESS, title: 'Success', textBody: `Milk Added` });
+      props.dataUpdate();
+    } catch (e) { console.log(e); } finally { setIsLoading(false); clickedRef.current = 0; }
   };
 
   const saleProduct = async () => {
-    setBottomSheetSale(false);
     if (!selectedQuantity || !selected) {
-      Toast.show({
-        type: ALERT_TYPE.WARNING,
-        title: 'Warning',
-        textBody: `All Fields Required!`,
-      });
+      Toast.show({ type: ALERT_TYPE.WARNING, title: 'Warning', textBody: `All Fields Required!` });
       return;
     }
     setIsLoading(true);
+    const selectedStock = stocks.find(stock => stock._id === selected);
+    const amount = Number(selectedQuantity) * (selectedStock?.price ?? 0);
 
-    const selectedStock = stocks.find((stock: any) => stock._id === selected);
-    let amount = Number(selectedQuantity) * (selectedStock?.price ?? 1);
     const payload = {
       firm: firm.id,
       stockId: selected,
       quantity: Number(selectedQuantity),
-      amount: amount,
+      amount,
       user: props.customer._id,
       userType: props.userType,
       productName: selectedStock.item,
       date: saleDate,
     };
 
-    await fetch(`${BASE_URL}/history/create`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
-      .then(async (res: any) => {
-        const data = await res.json();
-        setSelected('');
-        setSelectedQuantity('');
-        setIsLoading(false);
-        Toast.show({
-          type: ALERT_TYPE.SUCCESS,
-          title: 'Success',
-          textBody: `Product saled`,
-        });
-        props.dataUpdate();
-      })
-      .catch(e => {
-        console.log(e);
-        setIsLoading(false);
+    try {
+      await fetch(`${BASE_URL}/history/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
+      setBottomSheetSale(false);
+      Toast.show({ type: ALERT_TYPE.SUCCESS, title: 'Success', textBody: `Product Sold` });
+      props.dataUpdate();
+    } catch (e) { console.log(e); } finally { setIsLoading(false); }
   };
-  if (isLoading) {
-    return <LoadingOverlay visible={isLoading} />;
-  }
+
   return (
-    <View style={{ ...styles.container }}>
-      <TouchableOpacity
-        style={styles.btn}
-        onPress={() => {
-          setBottomSheetAdd(true);
-        }}
-      >
-        <Text style={{ color: '#5086E7', fontWeight: 600 }}>Add Milk</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.btn}
-        onPress={() => {
-          setBottomSheetSale(true);
-        }}
-      >
-        <Text style={{ color: '#5086E7', fontWeight: 600 }}>Sale</Text>
+    <View style={styles.container}>
+      <TouchableOpacity style={styles.minBtn} onPress={() => setBottomSheetAdd(true)}>
+        <FeIcon name="plus-circle" size={18} color="#FFF" />
+        <Text style={styles.minBtnText}>Add Milk</Text>
       </TouchableOpacity>
 
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={bottomSheetAdd}
-        onRequestClose={() => {}}
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#fff',
-          alignSelf: 'center',
-        }}
-      >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <View
-              style={{
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: 10,
-              }}
-            >
-              <Text style={{ color: '#333', fontSize: 24 }}>
-                Add Milk ({milkEntry.timeZone})
-              </Text>
-              <FeIcon
-                name="x"
-                size={26}
-                color="#333"
-                onPress={() => {
-                  setBottomSheetAdd(false);
-                }}
-              />
-            </View>
+      <TouchableOpacity style={[styles.minBtn, styles.saleBtn]} onPress={() => setBottomSheetSale(true)}>
+        <FeIcon name="shopping-bag" size={18} color="#10B981" />
+        <Text style={[styles.minBtnText, { color: '#10B981' }]}>Sale</Text>
+      </TouchableOpacity>
 
-            <View style={styles.IconContainer}>
-              {
-                props.customer.buffaloMilk.activeBuffaloMilk && 
-
-              <TouchableOpacity
-                style={[styles.iconWrapper, isBuffalo && styles.selected]}
-                onPress={() => setIsBuffalo(true)}
-              >
-                <Image
-                  source={require('../../assets/buffalo.png')}
-                  style={styles.icon}
-                />
-              </TouchableOpacity>
-              }
-              {
-                props.customer.cowMilk.activeCowMilk && 
-              <TouchableOpacity
-                style={[styles.iconWrapper, !isBuffalo && styles.selected]}
-                onPress={() => setIsBuffalo(false)}
-              >
-                <Image
-                  source={require('../../assets/cow.png')}
-                  style={styles.icon}
-                />
-              </TouchableOpacity>
-              }
-            </View>
-
-            <View
-              style={[styles.stockContainer, { height: 50, marginTop: 10 }]}
-            >
-              <TouchableOpacity
-                onPress={() => weightRef.current?.focus()}
-                style={[
-                  styles.inputBox,
-                  { width: props.userType === 'farmer' && (props.customer.buffaloMilk.fatAmount || props.customer.cowMilk.fatAmount) ? '45%' : '95%' },
-                ]}
-              >
-                <TextInput
-                  editable
-                  ref={weightRef}
-                  multiline
-                  numberOfLines={4}
-                  maxLength={40}
-                  onChangeText={text =>
-                    setMilkEntry(prev => ({ ...prev, weight: text }))
-                  }
-                  value={milkEntry.weight}
-                  style={styles.textInput}
-                  placeholder="Weight"
-                />
-              </TouchableOpacity>
-              {props.userType === 'farmer' && (props.customer.buffaloMilk.fatAmount || props.customer.cowMilk.fatAmount) && (
-                <View style={styles.inputBox}>
-                  <TextInput
-                    editable
-                    multiline
-                    numberOfLines={4}
-                    maxLength={40}
-                    onChangeText={text =>
-                      setMilkEntry(prev => ({ ...prev, fat: text }))
-                    }
-                    value={milkEntry.fat}
-                    style={styles.textInput}
-                    placeholder="Fat"
-                  />
-                </View>
-              )}
-            </View>
-
-            <View style={[styles.stockContainer, { height: 50 }]}>
-              <TouchableOpacity
-                style={styles.inputBox}
-                onPress={() => setOpen(true)}
-              >
-                <View>
-                  <TextInput
-                    editable={false}
-                    value={date.toDateString()}
-                    onChangeText={() => {}} // ❌ ignores input
-                    style={styles.textInput}
-                    placeholder="pick Date"
-                  />
-                  <Modal visible={open} transparent animationType="fade">
-                    <View
-                      style={{
-                        flex: 1,
-                        backgroundColor: 'rgba(0,0,0,0.4)',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <View
-                        style={{
-                          backgroundColor: '#fff',
-                          borderRadius: 12,
-                          padding: 16,
-                          width: '90%',
-                        }}
-                      >
-                        <DatePicker
-                          date={date}
-                          onDateChange={setDate}
-                          mode="datetime"
-                        />
-
-                        {/* Buttons */}
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            justifyContent: 'space-around',
-                            marginTop: 12,
-                          }}
-                        >
-                          <TouchableOpacity
-                            onPress={() => setOpen(false)}
-                            style={{
-                              paddingVertical: 10,
-                              paddingHorizontal: 16,
-                              marginRight: 10,
-                              borderWidth: 1,
-                              borderColor: '#5086E7',
-                              width: '30%',
-                              borderRadius: 10,
-                            }}
-                          >
-                            <Text
-                              style={{
-                                color: '#999',
-                                fontWeight: '600',
-                                textAlign: 'center',
-                              }}
-                            >
-                              Cancel
-                            </Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            onPress={() => setOpen(false)}
-                            style={{
-                              paddingVertical: 10,
-                              paddingHorizontal: 16,
-                              backgroundColor: '#5086E7',
-                              width: '30%',
-                              borderRadius: 10,
-                            }}
-                          >
-                            <Text
-                              style={{
-                                color: '#fff',
-                                fontWeight: '600',
-                                textAlign: 'center',
-                              }}
-                            >
-                              Done
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </View>
-                  </Modal>
-                </View>
-              </TouchableOpacity>
-              <View
-                style={[
-                  styles.inputBox,
-                  { backgroundColor: '#5086E7', width: '45%' },
-                ]}
-              >
-                <TouchableOpacity onPress={addEntry}>
-                  <Text
-                    style={{ fontSize: 16, color: '#fff', fontWeight: 700 }}
-                  >
-                    Add Milk
-                  </Text>
-                </TouchableOpacity>
+      {/* --- ADD MILK MODAL --- */}
+      <Modal animationType="slide" transparent visible={bottomSheetAdd}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ScrollView keyboardShouldPersistTaps="handled" scrollEnabled={false} contentContainerStyle={{ paddingBottom: 10 }}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>New Entry ({milkEntry.timeZone})</Text>
+                <TouchableOpacity onPress={() => setBottomSheetAdd(false)}><FeIcon name="x-circle" size={28} color="#999" /></TouchableOpacity>
               </View>
-            </View>
+
+              <View style={styles.animalSelector}>
+                {props.customer.buffaloMilk?.activeBuffaloMilk && (
+                  <TouchableOpacity style={[styles.animalCard, isBuffalo && styles.animalSelected]} onPress={() => setIsBuffalo(true)}>
+                    <Image source={require('../../assets/buffalo.png')} style={styles.animalIcon} />
+                    <Text style={[styles.animalText, isBuffalo && styles.animalTextActive]}>Buffalo</Text>
+                  </TouchableOpacity>
+                )}
+                {props.customer.cowMilk?.activeCowMilk && (
+                  <TouchableOpacity style={[styles.animalCard, !isBuffalo && styles.animalSelected]} onPress={() => setIsBuffalo(false)}>
+                    <Image source={require('../../assets/cow.png')} style={styles.animalIcon} />
+                    <Text style={[styles.animalText, !isBuffalo && styles.animalTextActive]}>Cow</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <View style={styles.inputRow}>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>Weight (kg)</Text>
+                  <TextInput style={styles.input} keyboardType="numeric" placeholder="0.0" value={milkEntry.weight} onChangeText={t => setMilkEntry(p => ({ ...p, weight: t }))} />
+                </View>
+                {(activeMilkConfig?.fatAmount || activeMilkConfig?.snfAmount) && (
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Fat (%)</Text>
+                    <TextInput style={styles.input} keyboardType="numeric" placeholder="0.0" value={milkEntry.fat} onChangeText={t => setMilkEntry(p => ({ ...p, fat: t }))} />
+                  </View>
+                )}
+                {activeMilkConfig?.snfAmount && (
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>CLR</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="0" value={milkEntry.clr} onChangeText={t => setMilkEntry(p => ({ ...p, clr: t }))} />
+                    </View>
+                )}
+              </View>
+
+              <TouchableOpacity style={styles.dateSelector} onPress={() => setOpen(true)}>
+                <FeIcon name="calendar" size={20} color="#5086E7" />
+                <Text style={styles.dateSelectorText}>{date.toLocaleString()}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.submitBtn} onPress={addEntry}><Text style={styles.submitBtnText}>Confirm Entry</Text></TouchableOpacity>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* --- SALE MODAL --- */}
+      <Modal animationType="slide" transparent visible={bottomSheetSale}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+             <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Sale Product</Text>
+                <TouchableOpacity onPress={() => setBottomSheetSale(false)}><FeIcon name="x-circle" size={28} color="#999" /></TouchableOpacity>
+             </View>
+             <SelectList setSelected={(val: string) => setSelected(val)} data={stocks.map((stk: any) => ({ key: stk._id, value: stk.item }))} save="key" boxStyles={styles.dropdownBox} placeholder="Select Stock" />
+             <View style={{ marginTop: 15 }}>
+                <Text style={styles.label}>Quantity</Text>
+                <TextInput style={styles.input} keyboardType="numeric" placeholder="Enter quantity" value={selectedQuantity} onChangeText={setSelectedQuantity} />
+             </View>
+             <TouchableOpacity style={[styles.dateSelector, { marginTop: 15 }]} onPress={() => setOpen(true)}><FeIcon name="calendar" size={20} color="#5086E7" /><Text style={styles.dateSelectorText}>{saleDate.toDateString()}</Text></TouchableOpacity>
+             <TouchableOpacity style={[styles.submitBtn, { backgroundColor: '#5086E7' }]} onPress={saleProduct}><Text style={styles.submitBtnText}>Complete Sale</Text></TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={bottomSheetSale}
-        onRequestClose={() => {}}
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#fff',
-          alignSelf: 'center',
-        }}
-      >
-        <View style={styles.centeredView}>
-          <View style={[styles.modalView, { padding: 20 }]}>
-            <View style={{ width: '100%', alignSelf: 'flex-end', padding: 10 }}>
-              <FeIcon
-                name="x"
-                size={26}
-                color="#333"
-                onPress={() => {
-                  setBottomSheetSale(false);
-                }}
-              />
-            </View>
-            <View
-              style={{
-                width: '100%',
-                padding: 10,
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'flex-start',
-                justifyContent: 'space-around',
-                gap: 10,
-              }}
-            >
-              <View style={{ width: '50%' }}>
-                <View style={{ zIndex: 1000 }}>
-                  <SelectList
-                    setSelected={(val: string) => setSelected(val)}
-                    data={stocks.map((stk: any) => ({
-                      key: stk._id,
-                      value: stk.item,
-                    }))}
-                    save="key"
-                    boxStyles={{
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderColor: '#5086E7',
-                      backgroundColor: '#fff',
-                      height: 42,
-                    }}
-                    dropdownStyles={{
-                      width: '100%',
-                      maxHeight: 100,
-                      backgroundColor: '#fff',
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderColor: '#5086E7',
-                      elevation: 6,
-                    }}
-                    dropdownItemStyles={{
-                      paddingVertical: 10,
-                      paddingHorizontal: 12,
-                    }}
-                  />
-                </View>
-              </View>
-              <View style={styles.inputBox}>
-                <TextInput
-                  editable
-                  multiline
-                  numberOfLines={4}
-                  maxLength={40}
-                  onChangeText={text => setSelectedQuantity(text)}
-                  value={selectedQuantity}
-                  style={styles.textInput}
-                  placeholder="Quantity"
-                />
-              </View>
-            </View>
-            <View style={[styles.stockContainer, { height: 50 }]}>
-              <TouchableOpacity
-                style={styles.inputBox}
-                onPress={() => setOpen(true)}
-              >
-                <View>
-                  <TextInput
-                    editable={false}
-                    value={saleDate.toDateString()}
-                    onChangeText={() => {}} // ❌ ignores input
-                    style={styles.textInput}
-                    placeholder="sale Date"
-                  />
-                  <Modal visible={open} transparent animationType="fade">
-                    <View
-                      style={{
-                        flex: 1,
-                        backgroundColor: 'rgba(0,0,0,0.4)',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <View
-                        style={{
-                          backgroundColor: '#fff',
-                          borderRadius: 12,
-                          padding: 16,
-                          width: '90%',
-                        }}
-                      >
-                        <DatePicker
-                          date={saleDate}
-                          onDateChange={setSaleDate}
-                          mode="datetime"
-                        />
-
-                        {/* Buttons */}
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            justifyContent: 'space-around',
-                            marginTop: 12,
-                          }}
-                        >
-                          <TouchableOpacity
-                            onPress={() => setOpen(false)}
-                            style={{
-                              paddingVertical: 10,
-                              paddingHorizontal: 16,
-                              marginRight: 10,
-                              borderWidth: 1,
-                              borderColor: '#5086E7',
-                              width: '30%',
-                              borderRadius: 10,
-                            }}
-                          >
-                            <Text
-                              style={{
-                                color: '#999',
-                                fontWeight: '600',
-                                textAlign: 'center',
-                              }}
-                            >
-                              Cancel
-                            </Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            onPress={() => setOpen(false)}
-                            style={{
-                              paddingVertical: 10,
-                              paddingHorizontal: 16,
-                              backgroundColor: '#5086E7',
-                              width: '30%',
-                              borderRadius: 10,
-                            }}
-                          >
-                            <Text
-                              style={{
-                                color: '#fff',
-                                fontWeight: '600',
-                                textAlign: 'center',
-                              }}
-                            >
-                              Done
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </View>
-                  </Modal>
-                </View>
-              </TouchableOpacity>
-              <View
-                style={[
-                  styles.inputBox,
-                  {
-                    backgroundColor: '#5086E7',
-                    width: '45%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  },
-                ]}
-              >
-                <TouchableOpacity onPress={saleProduct}>
-                  <Text
-                    style={{ fontSize: 16, color: '#fff', fontWeight: 700 }}
-                  >
-                    Sale
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <DatePicker modal open={open} date={bottomSheetAdd ? date : saleDate} onConfirm={d => { setOpen(false); bottomSheetAdd ? setDate(d) : setSaleDate(d); }} onCancel={() => setOpen(false)} />
+      <LoadingOverlay visible={isLoading} />
     </View>
   );
 };
 
-export default AddEntryAndSale;
-
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    padding: 20,
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  btn: {
-    width: '30%',
-    height: 30,
-    borderWidth: 1,
-    borderRadius: 10,
-    borderColor: '#5086E7',
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stockContainer: {
-    width: '100%',
-    height: 100,
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-  },
-  inputBox: {
-    width: '45%',
-    backgroundColor: '#ebeef2ff',
-    borderRadius: 7,
-    height: 40,
-    fontWeight: '700',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  textInput: {
-    padding: 10,
-    flex: 1,
-    width: '100%',
-  },
-  bottomSheetAdd: {},
-  button: {
-    width: '30%',
-    borderWidth: 1,
-    alignItems: 'center',
-    borderColor: '#5086E7',
-    backgroundColor: '#5086E7',
-    borderRadius: 10,
-    height: 40,
-    display: 'flex',
-    justifyContent: 'center',
-  },
-  text: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  bottomView: {
-    height: 500,
-  },
-  bottomViewSale: {
-    height: 500,
-  },
-  dropdownStyle: {
-    borderRadius: 10, // Optional, to give it a nice rounded corner
-    height: 300, // Ensure the height of the dropdown is large enough
-  },
-  centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalView: {
-    margin: 20,
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-  },
-
-  IconContainer: {
-    width: '100%',
-    height: 50,
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignSelf: 'flex-start',
-    gap: 15,
-    marginLeft: 12,
-  },
-  iconWrapper: {
-    width: 50,
-    height: 50,
-    borderRadius: 35,
-    borderWidth: 2,
-    borderColor: '#ccc',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-  icon: {
-    width: 40,
-    height: 40,
-    resizeMode: 'contain',
-  },
-  selected: {
-    borderColor: '#2e86de',
-    backgroundColor: '#eaf2ff',
-  },
+  container: { flexDirection: 'row', paddingHorizontal: 18, marginTop: 12, gap: 12 },
+  minBtn: { flex: 1, backgroundColor: '#1E293B', paddingVertical: 14, borderRadius: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
+  saleBtn: { backgroundColor: '#FFF', borderWidth: 1.5, borderColor: '#10B981' },
+  minBtnText: { color: '#FFF', fontWeight: '700', fontSize: 13 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 25, elevation: 20 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: '#333' },
+  label: { fontSize: 14, color: '#555', marginBottom: 8, fontWeight: '600' },
+  animalSelector: { flexDirection: 'row', gap: 15, marginBottom: 20 },
+  animalCard: { flex: 1, alignItems: 'center', padding: 12, borderRadius: 15, borderWidth: 1.5, borderColor: '#eee' },
+  animalSelected: { borderColor: '#5086E7', backgroundColor: '#eaf2ff' },
+  animalIcon: { width: 45, height: 45, marginBottom: 5, resizeMode: 'contain' },
+  animalText: { fontSize: 13, color: '#999', fontWeight: 'bold' },
+  animalTextActive: { color: '#5086E7' },
+  inputRow: { flexDirection: 'row', gap: 10, marginBottom: 15 },
+  inputContainer: { flex: 1 },
+  input: { backgroundColor: '#F3F6F9', borderRadius: 12, paddingHorizontal: 15, paddingVertical: 12, fontSize: 16, borderWidth: 1, borderColor: '#E8ECF0' },
+  dateSelector: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f4ff', padding: 12, borderRadius: 12, gap: 10, marginBottom: 20 },
+  dateSelectorText: { color: '#5086E7', fontWeight: '600' },
+  submitBtn: { backgroundColor: '#2ecc71', paddingVertical: 15, borderRadius: 15, alignItems: 'center' },
+  submitBtnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  dropdownBox: { borderRadius: 12, borderColor: '#E8ECF0', backgroundColor: '#F3F6F9' },
 });
+
+export default AddEntryAndSale;

@@ -8,6 +8,8 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Platform,
+  Dimensions,
 } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { BASE_URL, saveToken } from '../../token/tokenStorage';
@@ -20,6 +22,8 @@ import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import { setFarmerDetails } from '../../redux/slices/farmerSlice';
 import SignupScreen from '../components/Signup';
 
+const { width } = Dimensions.get('window');
+
 export default function AuthNavigator() {
   const dispatch = useDispatch();
   const [phoneNumber, setPhoneNumber] = useState<string>('');
@@ -29,177 +33,109 @@ export default function AuthNavigator() {
 
   const Login = async () => {
     setIsLoading(true);
-    await fetch(`${BASE_URL}/user/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ phoneNumber, password }),
-    })
-      .then(async (res: any) => {
-        const data = await res.json();
-        const { user, token, message, status, isSubscriptionExp } = data;
-
-        setIsLoading(false);
-        
-        if (data.status === 403 || isSubscriptionExp) {
-          Toast.show({
-            type: ALERT_TYPE.DANGER,
-            title: 'Error',
-            textBody: `subscription expired!!`,
-          });
-
-          const userData = {
-            id: data.user._id,
-            name: data.user.name,
-          };
-          dispatch(setAdminDetails(userData));
-
-          const firmData = {
-            name: '',
-            id: '',
-            role: 'admin',
-            subscriptionExp: isSubscriptionExp,
-          };
-          dispatch(setFirmDetails(firmData));
-
-          return;
-        }
-        if (status === 404) {
-          Toast.show({
-            type: ALERT_TYPE.DANGER,
-            title: 'Error',
-            textBody: message,
-          });
-
-          return;
-        }
-        if (status === 500) {
-          Toast.show({
-            type: ALERT_TYPE.DANGER,
-            title: 'Error',
-            textBody: message,
-          });
-
-          return;
-        }
-        if (token) {
-          await saveToken(token);
-        }
-        const firmData = {
-          name: user.firmId.name,
-          id: user.firmId._id,
-          role: user.userType,
-          // subscriptionExp: isSubscriptionExp
-        };
-
-        dispatch(setFirmDetails(firmData));
-
-        const userData = {
-          id: user._id,
-          name: user.name,
-        };
-
-        if (user.userType === 'admin') {
-          dispatch(setAdminDetails(userData));
-        } else if (user.userType === 'customer') {
-          dispatch(setCustomerDetails(userData));
-        } else if (user.userType === 'distributer') {
-          dispatch(setDistributerDetails(userData));
-        } else if (user.userType === 'farmer') {
-          dispatch(setFarmerDetails(userData));
-        }
-      })
-      .catch((e: any) => {
-        console.log(e);
-
-        setIsLoading(false);
+    try {
+      const response = await fetch(`${BASE_URL}/user/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber, password }),
       });
+      const data = await response.json();
+      const { user, token, message, status, isSubscriptionExp } = data;
+
+      setIsLoading(false);
+
+      if (status === 403 || isSubscriptionExp) {
+        Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Subscription expired!!' });
+        dispatch(setAdminDetails({ id: user._id, name: user.name }));
+        dispatch(setFirmDetails({ name: '', id: '', role: 'admin', subscriptionExp: isSubscriptionExp }));
+        return;
+      }
+
+      if (status === 404 || status === 500) {
+        Toast.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: message });
+        return;
+      }
+
+      if (token) await saveToken(token);
+
+      dispatch(setFirmDetails({ name: user.firmId.name, id: user.firmId._id, role: user.userType }));
+
+      const userData = { id: user._id, name: user.name };
+      if (user.userType === 'admin') dispatch(setAdminDetails(userData));
+      else if (user.userType === 'customer') dispatch(setCustomerDetails(userData));
+      else if (user.userType === 'distributer') dispatch(setDistributerDetails(userData));
+      else if (user.userType === 'farmer') dispatch(setFarmerDetails(userData));
+
+    } catch (e) {
+      console.log(e);
+      setIsLoading(false);
+    }
   };
 
-  if (isLoading) {
-    return <LoadingOverlay visible={isLoading} />;
-  }
+  if (isLoading) return <LoadingOverlay visible={isLoading} />;
 
   return (
     <>
       {showLogin ? (
         <View style={styles.container}>
-          <KeyboardAvoidingView>
-            <View style={styles.logoSection}>
-              <Image source={require('../assets/logo1.png')} />
+          <View style={styles.headerBackground}>
+            <View style={styles.logoCircle}>
+              <Image 
+                source={require('../assets/logo1.png')} 
+                style={styles.logo} 
+                resizeMode="contain" 
+              />
             </View>
-            <View style={styles.formBox}>
-              <View style={styles.inputBox}>
-                <Icon
-                  name="phone"
-                  size={28}
-                  color="#5086E7"
-                  style={{ marginLeft: 10 }}
-                />
+            <Text style={styles.welcomeText}>Welcome Back</Text>
+            <Text style={styles.subText}>Sign in to continue your business</Text>
+          </View>
+
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+            style={styles.content}
+          >
+            <View style={styles.card}>
+              <View style={styles.inputContainer}>
+                <Icon name="phone" size={20} color="#5086E7" style={styles.inputIcon} />
                 <TextInput
-                  editable
-                  multiline
-                  numberOfLines={4}
+                  keyboardType="phone-pad"
                   maxLength={10}
-                  onChangeText={text => setPhoneNumber(text)}
+                  onChangeText={setPhoneNumber}
                   value={phoneNumber}
                   style={styles.textInput}
                   placeholder="Phone Number"
+                  placeholderTextColor="#999"
                 />
               </View>
-              {/* <View style={styles.formBox}> */}
-              <View style={styles.inputBox}>
-                <Icon
-                  name="lock"
-                  size={28}
-                  color="#5086E7"
-                  style={{ marginLeft: 10 }}
-                />
+
+              <View style={styles.inputContainer}>
+                <Icon name="lock" size={20} color="#5086E7" style={styles.inputIcon} />
                 <TextInput
-                  editable
-                  multiline
-                  numberOfLines={4}
+                  secureTextEntry
                   maxLength={40}
-                  onChangeText={text => setPassword(text)}
+                  onChangeText={setPassword}
                   value={password}
                   style={styles.textInput}
                   placeholder="Password"
+                  placeholderTextColor="#999"
                 />
-                {/* </View> */}
+              </View>
+
+              <TouchableOpacity style={styles.loginButton} onPress={Login}>
+                <Text style={styles.loginButtonText}>LOGIN</Text>
+              </TouchableOpacity>
+
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>Add Milk Business? </Text>
+                <TouchableOpacity onPress={() => setShowLogin(false)}>
+                  <Text style={styles.signupLink}>Signup</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </KeyboardAvoidingView>
-
-          <View
-            style={{
-              width: '90%',
-              alignSelf: 'center',
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: 5,
-              height: 50,
-            }}
-          >
-            <Text>Add Milk Business?</Text>
-            <TouchableOpacity onPress={() => setShowLogin(false)}>
-              <Text style={styles.text}>Signup</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={[styles.formBox, { marginTop: 10 }]}>
-            <TouchableOpacity style={styles.button} onPress={Login}>
-              <Text style={styles.text}>Login</Text>
-            </TouchableOpacity>
-          </View>
         </View>
       ) : (
-        <SignupScreen
-          onClickLogin={() => {
-            setShowLogin(true);
-          }}
-        />
+        <SignupScreen onClickLogin={() => setShowLogin(true)} />
       )}
     </>
   );
@@ -207,55 +143,112 @@ export default function AuthNavigator() {
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
     flex: 1,
-    backgroundColor: '#FAFBFB',
+    backgroundColor: '#F5F7FA',
   },
-  logoSection: {
+  headerBackground: {
     width: '100%',
-    height: 300,
+    height: width * 0.8,
     backgroundColor: '#5086E7',
-    borderBottomRightRadius: 40,
-    borderBottomLeftRadius: 40,
-    display: 'flex',
+    borderBottomRightRadius: 80,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingTop: 40,
   },
-  formBox: {
-    display: 'flex',
-    alignItems: 'center',
+  logoCircle: {
+    width: 150,
+    height: 150,
+    borderRadius: 50,
+    backgroundColor: '#FFF',
     justifyContent: 'center',
-    marginTop: 50,
+    alignItems: 'center',
+    marginBottom: 15,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
   },
-  inputBox: {
-    width: '90%',
-    backgroundColor: '#ebeef2ff',
-    borderRadius: 7,
-    height: 50,
-    fontWeight: '700',
-    display: 'flex',
+  logo: {
+    width: 140,
+    height: 140,
+  },
+  welcomeText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  subText: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 5,
+  },
+  content: {
+    flex: 1,
+    marginTop: -20, // Pulls the card up into the blue area
+    paddingHorizontal: 25,
+  },
+  card: {
+    backgroundColor: '#FFF',
+    borderRadius: 25,
+    padding: 25,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+  },
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 10,
-    marginTop: 20,
+    backgroundColor: '#F0F4F8',
+    borderRadius: 12,
+    marginBottom: 20,
+    paddingHorizontal: 15,
+    height: 55,
+  },
+  inputIcon: {
+    marginRight: 10,
+    width: 25,
+    textAlign: 'center',
   },
   textInput: {
-    padding: 10,
-  },
-  button: {
-    width: '90%',
-    borderWidth: 1,
-    alignItems: 'center',
-    borderColor: '#5086E7',
-    borderRadius: 10,
-    height: 40,
-    display: 'flex',
-    justifyContent: 'center',
-  },
-  text: {
+    flex: 1,
+    color: '#333',
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '500',
+  },
+  loginButton: {
+    backgroundColor: '#5086E7',
+    borderRadius: 12,
+    height: 55,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+    shadowColor: '#5086E7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  loginButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 25,
+  },
+  footerText: {
+    color: '#666',
+    fontSize: 14,
+  },
+  signupLink: {
     color: '#5086E7',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });

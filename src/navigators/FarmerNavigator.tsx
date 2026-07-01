@@ -5,11 +5,13 @@ import { createStackNavigator } from '@react-navigation/stack';
 import FarmerHome from '../screens/farmers/FarmerHome';
 import ShowHistory from '../screens/commonScreen/ShowHistory';
 import ShowAllHistory from '../screens/commonScreen/AllHistory';
+import ShowSavedBalance from '../screens/commonScreen/ShowSavedBalance';
 
 type FarmerStackParamList = {
-  Farmer: { id: string | undefined , userType:string };
+  Farmer: { id: string | undefined; userType: string };
   History: undefined;
   AllHistory: undefined;
+  SavedBalance: undefined;
 };
 
 const Stack = createStackNavigator<FarmerStackParamList>();
@@ -26,16 +28,11 @@ export default function FarmerNavigator() {
       <Stack.Screen
         name="Farmer"
         component={FarmerHome}
-        initialParams={{ id: farmer?.id , userType:"farmer" }}
+        initialParams={{ id: farmer?.id, userType: 'farmer' }}
       />
-      <Stack.Screen
-        name="History"
-        component={ShowHistory}
-      />
-      <Stack.Screen
-        name="AllHistory"
-        component={ShowAllHistory}
-      />
+      <Stack.Screen name="History" component={ShowHistory} />
+      <Stack.Screen name="AllHistory" component={ShowAllHistory} />
+      <Stack.Screen name="SavedBalance" component={ShowSavedBalance} />
     </Stack.Navigator>
   );
 }

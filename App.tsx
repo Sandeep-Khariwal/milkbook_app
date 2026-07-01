@@ -69,7 +69,6 @@ function AppContent() {
         const data = await res.json();
         setIsLoading(false);
         if (data.status === 403) {
-          console.log("user : ",data.user,data.user.user.firmId._id);
           
           console.log('subscription expired : ', data);
           Toast.show({

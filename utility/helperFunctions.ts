@@ -20,3 +20,19 @@ export const formatDate = (date: string | number | Date): string => {
 
   return `${day}/${month}/${year}`;
 };
+
+
+export const parseToDateWithShift = (
+  dateStr: string,
+  shift: "M" | "E"
+): Date => {
+  const [day, month, year] = dateStr.split("-").map(Number);
+
+  // convert 2-digit year → 4-digit (assume 20xx)
+  const fullYear = 2000 + year;
+
+  // set hours based on shift
+  const hours = shift === "M" ? 6 : 18;
+
+  return new Date(fullYear, month - 1, day, hours, 0, 0);
+};

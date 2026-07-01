@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Image,
   Modal,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -30,38 +29,60 @@ const EntriesTable = (props: {
     phoneNumber: string;
   };
   userType: string;
-  findTotalWeight?: (wt: number) => void;
+  findTotalWeight?: (
+    wt: number,
+    buffaloTotalWeight: number,
+    cowTotalWeight: number,
+    buffaloTotalAmount?: number,
+    cowTotalAmount?: number,
+  ) => void;
   dataUpdate: () => void;
   setTotalEarn?: (wt: number, amnt: number) => void;
+  onContentReady?: () => void;
 }) => {
   const firm = useSelector((state: any) => state.firm.value);
 
   const [isLoading, setIsLoading] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
-
   const [fromDate, setFromDate] = useState<Date | null>(null);
   const [toDate, setToDate] = useState<Date | null>(null);
   const [openFromDate, setOpenFromDate] = useState(false);
   const [openToDate, setOpenToDate] = useState(false);
   const [isBuffalo, setIsBuffalo] = useState<boolean>(true);
-
+  const [date, setDate] = useState<Date>(new Date());
+  const [open, setOpen] = useState<boolean>(false);
   const [allEntries, setAllEntries] = useState<any[]>([]);
+
+  // Additional states for rendering local filtered separate amounts
+  const [buffaloAmount, setBuffaloAmount] = useState<number>(0);
+  const [cowAmount, setCowAmount] = useState<number>(0);
+  const [buffaloWeight, setBuffaloWeight] = useState<number>(0);
+  const [cowWeight, setCowWeight] = useState<number>(0);
 
   const [milkEntry, setMilkEntry] = useState<any>({
     _id: '',
     fat: '',
     weight: '',
     timeZone: '',
-    date: new Date(),
+    date: new Date()
   });
-    const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    // Component open hote hi bottom pe scroll karega
-    setTimeout(() => {
-      scrollRef.current?.scrollToEnd({ animated: true });
-    }, 300);
-  }, []);
+    if (allEntries.length > 0 && props.onContentReady) {
+      setTimeout(() => {
+        props.onContentReady();
+      }, 200);
+    }
+  }, [allEntries]);
+
+  useEffect(() => {
+    if (date) {
+      const nowDate = new Date(date);
+      const hours = nowDate.getHours();
+      const timeOfDay = hours < 12 ? 'M' : 'E';
+      setMilkEntry(prev => ({ ...prev, timeZone: timeOfDay }));
+    }
+  }, [date]);
 
   useEffect(() => {
     if (props.userId) {
@@ -80,22 +101,55 @@ const EntriesTable = (props: {
 
       const res = await fetch(`${BASE_URL}/entry/${id}?${query}`);
       const { data } = await res.json();
-      if (data.length) {
-        console.log("data : ",data);
-        
-        const totalWeight = data.reduce((acc: number, curr: any) => {
-          acc = acc + curr.weight;
-          return acc;
-        }, 0);
-        const totalAmount = data.reduce((acc: number, curr: any) => {
-          acc = acc + curr.amount;
-          return acc;
-        }, 0);
-        props.findTotalWeight && props.findTotalWeight(totalWeight);
 
-        if (fromDate && toDate) {
+      if (data && data.length) {
+        let bWeight = 0;
+        let cWeight = 0;
+        let bAmount = 0;
+        let cAmount = 0;
+
+        data.forEach(item => {
+          if (item.isBuffalo) {
+            bWeight += Number(item.weight || 0);
+            bAmount += Number(item.amount || 0);
+          } else {
+            cWeight += Number(item.weight || 0);
+            cAmount += Number(item.amount || 0);
+          }
+        });
+
+        setBuffaloWeight(bWeight);
+        setCowWeight(cWeight);
+        setBuffaloAmount(bAmount);
+        setCowAmount(cAmount);
+
+        const totalWeight = data.reduce(
+          (acc: number, curr: any) => acc + Number(curr.weight || 0),
+          0,
+        );
+        const totalAmount = data.reduce(
+          (acc: number, curr: any) => acc + Number(curr.amount || 0),
+          0,
+        );
+
+        if (props.findTotalWeight) {
+          props.findTotalWeight(
+            totalWeight,
+            bWeight,
+            cWeight,
+            bAmount,
+            cAmount,
+          );
+        }
+
+        if (fromDate && toDate && props.setTotalEarn) {
           props.setTotalEarn(totalWeight, totalAmount);
         }
+      } else {
+        setBuffaloWeight(0);
+        setCowWeight(0);
+        setBuffaloAmount(0);
+        setCowAmount(0);
       }
       setAllEntries(data || []);
     } catch (e) {
@@ -105,60 +159,6 @@ const EntriesTable = (props: {
     }
   };
 
-  /* ================= TABLE DATA ================= */
-
-const tableHead = [
-  'Date & Time',
-  'Animal',
-  'Weight',
-  ...(props.userType === 'farmer' ? ['FAT'] : []),
-  'Amount',
-  ...(firm.role === 'admin' ? ['Action'] : []),
-];
-
-const tableData = allEntries.map(ent => [
-  // Date + Time together
-  `${formatDate(new Date(ent.date))}  ${ent.timeZone}`,
-   ` ${ent.isBuffalo?"BF":"CW"} `,
-
-  ent.weight  ,
-
-  // FAT only for farmer
-  ...(props.userType === 'farmer' ? [ent.fat] : []),
-
-  // Amount for ALL
-    Number(ent.amount).toFixed(2) ,
-
-  // Action only for admin
-  ...(firm.role === 'admin'
-    ? [
-        <FeIcon
-          name="edit"
-          size={20}
-          color="#5086E7"
-          style={{ alignSelf: 'center' }}
-          onPress={() => {
-            const editEntry = {
-              _id: ent._id,
-              fat: String(ent.fat),
-              weight: String(ent.weight),
-              timeZone: ent.timeZone,
-              date: new Date(ent.date),
-            };
-            if(ent.isBuffalo != undefined){
-              setIsBuffalo(ent.isBuffalo)
-            }
-            setMilkEntry(editEntry);
-            setOpenEditModal(true);
-          }}
-        />,
-      ]
-    : []),
-]);
-
-
-
-
   const EditMilkEntry = async () => {
     setOpenEditModal(false);
     if (!milkEntry.weight) {
@@ -167,421 +167,515 @@ const tableData = allEntries.map(ent => [
         title: 'Warning',
         textBody: `All Fields Required!`,
       });
-
       return;
     }
     let amount;
+    const rate = isBuffalo
+      ? Number(props.customer.buffaloRate)
+      : Number(props.customer.cowRate);
 
     if (Number(milkEntry.fat)) {
-      if (isBuffalo) {
-        amount =
-          (Number(milkEntry.fat) *
-            Number(milkEntry.weight) *
-            Number(props.customer.buffaloRate)) /
-          100;
-      } else {
-        amount =
-          (Number(milkEntry.fat) *
-            Number(milkEntry.weight) *
-            Number(props.customer.cowRate)) /
-          100;
-      }
+      amount = (Number(milkEntry.fat) * Number(milkEntry.weight) * rate) / 100;
     } else {
-      if (isBuffalo) {
-        amount = Number(milkEntry.weight) * Number(props.customer.buffaloRate);
-      } else {
-        amount = Number(milkEntry.weight) * Number(props.customer.cowRate);
-      }
+      amount = Number(milkEntry.weight) * rate;
     }
 
     const payload = {
       weight: milkEntry.weight,
       fat: milkEntry.fat,
-      rate: isBuffalo
-        ? Number(props.customer.buffaloRate)
-        : Number(props.customer.cowRate),
+      rate,
       timeZone: milkEntry.timeZone,
-      amount: amount,
+      amount,
       customer: props.customer._id,
       firm: firm.id,
-      date: milkEntry.date,
+      date: new Date(date),
       _id: milkEntry._id,
+      isBuffalo,
     };
 
-
-    // return
-
-    await fetch(`${BASE_URL}/entry/create`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
-      .then(async (res: any) => {
-        const { data } = await res.json();
-        setIsLoading(false);
-
-        setMilkEntry({
-          _id: '',
-          fat: '',
-          weight: '',
-          amount: 0,
-          timeZone: '',
-          date: new Date(),
-        });
-        Toast.show({
-          type: ALERT_TYPE.SUCCESS,
-          title: 'Success',
-          textBody: `Milk Added`,
-        });
-        getAllEntries(props.userId);
-        props.dataUpdate();
-      })
-      .catch((e: any) => {
-        console.log(e);
-        setIsLoading(false);
+    try {
+      const res = await fetch(`${BASE_URL}/entry/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
+      await res.json();
+      Toast.show({
+        type: ALERT_TYPE.SUCCESS,
+        title: 'Success',
+        textBody: `Milk Updated Successfully`,
+      });
+      getAllEntries(props.userId);
+      props.dataUpdate();
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const tableHead = [
+    'Date & Time',
+    'Animal',
+    'Qty',
+    ...(props.userType === 'farmer' ? ['FAT'] : []),
+    'Amount',
+    ...(firm.role === 'admin' ? ['Edit'] : []),
+  ];
+
+  const tableData = allEntries.map(ent => {
+    const entryDate = new Date(ent.date);
+    const currentDate = new Date();
+    const timeDifference = currentDate.getTime() - entryDate.getTime();
+    const dayDifference = timeDifference / (1000 * 3600 * 24);
+    const isEditable = dayDifference <= 20;
+
+    return [
+      `${formatDate(ent.date)} ${ent.timeZone}`,
+      ent.isBuffalo ? 'BF' : 'CW',
+      ent.weight,
+      ...(props.userType === 'farmer' ? [ent.fat] : []),
+      <View style={styles.amountContainer}>
+        <Text style={styles.rowText}>₹{Number(ent.amount).toFixed(2)}</Text>
+        {ent.isEdited && <Text style={styles.editedText}>edited</Text>}
+      </View>,
+      ...(firm.role === 'admin'
+        ? [
+            <TouchableOpacity
+              disabled={!isEditable}
+              onPress={() => {
+                const editEntry = {
+                  _id: ent._id,
+                  fat: String(ent.fat),
+                  weight: String(ent.weight),
+                  timeZone: ent.timeZone,
+                  date: ent.date
+                };
+                setIsBuffalo(ent.isBuffalo);
+                setMilkEntry(editEntry);
+                setDate(new Date(editEntry.date));
+                setOpenEditModal(true);
+              }}
+              style={!isEditable && styles.disabledTouch}
+            >
+              <FeIcon
+                name="edit-3"
+                size={18}
+                color={isEditable ? "#5086E7" : "#CBD5E1"}
+                style={{ alignSelf: 'center' }}
+              />
+            </TouchableOpacity>,
+          ]
+        : []),
+    ];
+  });
 
   if (isLoading) return <LoadingOverlay visible />;
 
   return (
-    <ScrollView style={styles.container} ref={scrollRef}>
-      {/* ================= FILTER SECTION ================= */}
-      <View style={styles.filterRow}>
-        {/* FROM DATE */}
-        <TouchableOpacity
-          style={styles.filterInput}
-          onPress={() => setOpenFromDate(true)}
-        >
-          <TextInput
-            editable={false}
-            placeholder="From Date"
-            value={fromDate?.toDateString() || ''}
-            style={styles.textInput}
-          />
-        </TouchableOpacity>
+    <View style={styles.container}>
+      {/* FILTER SECTION */}
+      <View style={styles.filterCard}>
+        <View style={styles.filterRow}>
+          <TouchableOpacity
+            style={styles.filterInput}
+            onPress={() => {
+              setOpenFromDate(true);
+              setFromDate(new Date());
+            }}
+          >
+            <FeIcon name="calendar" size={14} color="#666" />
+            <Text style={styles.filterText}>
+              {fromDate ? formatDate(fromDate) : 'From'}
+            </Text>
+          </TouchableOpacity>
 
-        {/* TO DATE */}
-        <TouchableOpacity
-          style={styles.filterInput}
-          onPress={() => setOpenToDate(true)}
-        >
-          <TextInput
-            editable={false}
-            placeholder="To Date"
-            value={toDate?.toDateString() || ''}
-            style={styles.textInput}
-          />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.filterInput}
+            onPress={() => {
+              setOpenToDate(true);
+              setToDate(new Date());
+            }}
+          >
+            <FeIcon name="calendar" size={14} color="#666" />
+            <Text style={styles.filterText}>
+              {toDate ? formatDate(toDate) : 'To'}
+            </Text>
+          </TouchableOpacity>
 
-        {/* SEARCH */}
-        <FaIcon
-          name="search"
-          size={26}
-          color="#5086E7"
-          onPress={() => getAllEntries(props.userId)}
-        />
+          <TouchableOpacity
+            style={styles.searchBtn}
+            onPress={() => getAllEntries(props.userId)}
+          >
+            <FaIcon name="search" size={20} color="#fff" />
+          </TouchableOpacity>
 
-        {/* CLEAR */}
-        <FeIcon
-          name="delete"
-          size={26}
-          color="#5086E7"
-          onPress={() => {
-            setFromDate(null);
-            setToDate(null);
-            getAllEntries(props.userId);
-            props.dataUpdate();
-          }}
-        />
+          <TouchableOpacity
+            style={styles.clearBtn}
+            onPress={() => {
+              setFromDate(null);
+              setToDate(null);
+              getAllEntries(props.userId);
+            }}
+          >
+            <FeIcon name="refresh-cw" size={20} color="#5086E7" />
+          </TouchableOpacity>
+        </View>
+
+        {/* METRICS DISPLAYER SECTION FOR SEPARATE WEIGHTS AND AMOUNTS */}
+        {/* {allEntries.length > 0 && (
+          <View style={styles.statSplitWrapper}>
+            <View style={[styles.statSplitBox, styles.buffaloBorder]}>
+              <Text style={styles.statSplitHeader}>Buffalo (BF)</Text>
+              <Text style={styles.statSplitSub}>Weight: <Text style={styles.boldText}>{buffaloWeight.toFixed(2)} kg</Text></Text>
+              <Text style={styles.statSplitSub}>Amount: <Text style={styles.boldText}>₹{buffaloAmount.toFixed(2)}</Text></Text>
+            </View>
+            <View style={[styles.statSplitBox, styles.cowBorder]}>
+              <Text style={styles.statSplitHeader}>Cow (CW)</Text>
+              <Text style={styles.statSplitSub}>Weight: <Text style={styles.boldText}>{cowWeight.toFixed(2)} kg</Text></Text>
+              <Text style={styles.statSplitSub}>Amount: <Text style={styles.boldText}>₹{cowAmount.toFixed(2)}</Text></Text>
+            </View>
+          </View>
+        )} */}
       </View>
 
-      {/* FROM DATE MODAL */}
-      <Modal visible={openFromDate} transparent animationType="fade">
-        <View style={styles.dateModal}>
-          <View style={styles.datePickerBox}>
-            <DatePicker
-              date={fromDate ?? new Date()}
-              onDateChange={setFromDate}
-            />
-            <TouchableOpacity onPress={() => setOpenFromDate(false)}>
-              <Text style={styles.doneBtn}>Done</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      {/* TABLE */}
+      <View style={styles.tableWrapper}>
+        <Table borderStyle={{ borderWidth: 0 }}>
+          <Row
+            data={tableHead}
+            style={styles.head}
+            textStyle={styles.headText}
+          />
+          <Rows
+            data={tableData}
+            style={styles.rowStyle}
+            textStyle={styles.rowText}
+          />
+        </Table>
+      </View>
 
-      {/* TO DATE MODAL */}
-      <Modal visible={openToDate} transparent animationType="fade">
-        <View style={styles.dateModal}>
-          <View style={styles.datePickerBox}>
-            <DatePicker date={toDate ?? new Date()} onDateChange={setToDate} />
-            <TouchableOpacity onPress={() => setOpenToDate(false)}>
-              <Text style={styles.doneBtn}>Done</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      {/* DATE MODALS */}
+      <DatePickerModal
+        visible={openFromDate}
+        date={fromDate ?? new Date()}
+        onDateChange={setFromDate}
+        onClose={() => setOpenFromDate(false)}
+      />
+      <DatePickerModal
+        visible={openToDate}
+        date={toDate ?? new Date()}
+        onDateChange={setToDate}
+        onClose={() => setOpenToDate(false)}
+      />
 
-      {/* ================= TABLE ================= */}
-      <Table borderStyle={{ borderWidth: 1, borderColor: '#c8e1ff' }}>
-        <Row data={tableHead} style={styles.head} textStyle={styles.text} />
-
-        <View style={{ paddingBottom: 100 }}>
-          <Rows data={tableData} textStyle={styles.text} />
-        </View>
-      </Table>
-
-      {/* ================= EDIT MODAL ================= */}
-      <Modal
-        visible={openEditModal}
-        transparent
-        animationType="fade"
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'red',
-          alignSelf: 'center',
-        }}
-      >
+      {/* EDIT MODAL */}
+      <Modal visible={openEditModal} transparent animationType="slide">
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            <View
-              style={{
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: 10,
-              }}
-            >
-              <Text style={{ color: '#333', fontSize: 24 }}>Edit Milk</Text>
-              <FeIcon
-                name="x"
-                size={26}
-                color="#333"
-                onPress={() => {
-                  setOpenEditModal(false);
-                }}
-              />
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Entry</Text>
+              <TouchableOpacity onPress={() => setOpenEditModal(false)}>
+                <FeIcon name="x-circle" size={24} color="#ff5e5e" />
+              </TouchableOpacity>
             </View>
-            <View style={styles.IconContainer}>
-                      <TouchableOpacity
-                style={[styles.iconWrapper, isBuffalo && styles.selected]}
+
+            <View style={styles.animalSelector}>
+              <TouchableOpacity
+                style={[styles.animalBtn, isBuffalo && styles.selectedBtn]}
                 onPress={() => setIsBuffalo(true)}
               >
                 <Image
                   source={require('../../assets/buffalo.png')}
-                  style={styles.icon}
+                  style={styles.animalIcon}
                 />
+                <Text
+                  style={[
+                    styles.animalLabel,
+                    isBuffalo && styles.selectedLabel,
+                  ]}
+                >
+                  Buffalo
+                </Text>
               </TouchableOpacity>
-
               <TouchableOpacity
-                style={[styles.iconWrapper, !isBuffalo && styles.selected]}
+                style={[styles.animalBtn, !isBuffalo && styles.selectedBtn]}
                 onPress={() => setIsBuffalo(false)}
               >
                 <Image
                   source={require('../../assets/cow.png')}
-                  style={styles.icon}
+                  style={styles.animalIcon}
                 />
+                <Text
+                  style={[
+                    styles.animalLabel,
+                    !isBuffalo && styles.selectedLabel,
+                  ]}
+                >
+                  Cow
+                </Text>
               </TouchableOpacity>
-
-
             </View>
-            <View style={[styles.stockContainer, { height: 50 , marginTop:20 }]}>
-              <View
-                style={[
-                  styles.inputBox,
-                  { width: props.userType !== 'customer' ? '50%' : '95%' },
-                ]}
-              >
+
+            <View style={styles.inputRow}>
+              <View style={styles.modalInputBox}>
+                <Text style={styles.inputLabel}>Weight (kg)</Text>
                 <TextInput
-                  editable
-                  multiline
-                  numberOfLines={4}
-                  maxLength={40}
-                  onChangeText={text =>
-                    setMilkEntry(prev => ({ ...prev, weight: text }))
-                  }
+                  keyboardType="numeric"
                   value={milkEntry.weight}
-                  style={styles.textInput}
-                  placeholder="Weight"
+                  onChangeText={t => setMilkEntry(p => ({ ...p, weight: t }))}
+                  style={styles.modalInput}
+                  placeholder="0.0"
                 />
               </View>
               {props.userType !== 'customer' && (
-                <View style={styles.inputBox}>
+                <View style={styles.modalInputBox}>
+                  <Text style={styles.inputLabel}>Fat %</Text>
                   <TextInput
-                    editable
-                    multiline
-                    numberOfLines={4}
-                    maxLength={40}
-                    onChangeText={text =>
-                      setMilkEntry(prev => ({ ...prev, fat: text }))
-                    }
+                    keyboardType="numeric"
                     value={milkEntry.fat}
-                    style={styles.textInput}
-                    placeholder="Fat"
+                    onChangeText={t => setMilkEntry(p => ({ ...p, fat: t }))}
+                    style={styles.modalInput}
+                    placeholder="0.0"
                   />
                 </View>
               )}
             </View>
 
-            <View style={[styles.stockContainer, { height: 50 }]}>
-              <View
-                style={[
-                  styles.inputBox,
-                  { backgroundColor: '#5086E7', width: '95%' },
-                ]}
-              >
-                <TouchableOpacity onPress={EditMilkEntry}>
-                  <Text
-                    style={{ fontSize: 16, color: '#fff', fontWeight: 700 }}
-                  >
-                    Edit Milk
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            <TouchableOpacity
+              style={styles.dateSelector}
+              onPress={() => setOpen(true)}
+            >
+              <FeIcon name="clock" size={18} color="#5086E7" />
+              <Text style={styles.dateSelectorText}>
+                {date.toLocaleString()}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.saveActionBtn}
+              onPress={EditMilkEntry}
+            >
+              <Text style={styles.saveActionText}>Update Entry</Text>
+            </TouchableOpacity>
           </View>
         </View>
-        {/* </View> */}
       </Modal>
-    </ScrollView>
+
+      {/* INNER DATE PICKER */}
+      <Modal visible={open} transparent animationType="fade">
+        <View style={styles.centeredView}>
+          <View style={styles.datePickerBox}>
+            <DatePicker date={date} onDateChange={setDate} mode="datetime" />
+            <TouchableOpacity
+              style={styles.doneActionBtn}
+              onPress={() => setOpen(false)}
+            >
+              <Text style={styles.doneActionText}>Confirm Date</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 };
 
-export default EntriesTable;
-
-/* ================= STYLES ================= */
+const DatePickerModal = ({ visible, date, onDateChange, onClose }: any) => (
+  <Modal visible={visible} transparent animationType="fade">
+    <View style={styles.centeredView}>
+      <View style={styles.datePickerBox}>
+        <DatePicker date={date} onDateChange={onDateChange} mode="date" />
+        <TouchableOpacity onPress={onClose}>
+          <Text style={styles.doneBtn}>Set Date</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+);
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-
-  filterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  filterCard: {
+    backgroundColor: '#fff',
+    margin: 16,
+    padding: 12,
+    borderRadius: 15,
+    elevation: 4,
   },
-  stockContainer: {
-    width: '100%',
-    height: 100,
-    display: 'flex',
-    flexDirection: 'row',
-    // gap: 10,
-    // margin: 10,
-    alignItems: 'center',
-    justifyContent: 'space-around',
-  },
-  inputBox: {
-    width: '45%',
-    backgroundColor: '#ebeef2ff',
-    borderRadius: 7,
-    height: 40,
-    fontWeight: '700',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  filterRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   filterInput: {
     flex: 1,
-    backgroundColor: '#ebeef2',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-  },
-  textInput: {
-    height: 40,
-    width:"100%",
-    textAlign:"center"
-  },
-
-  head: {
-    height: 40,
-    backgroundColor: '#f1f8ff',
-  },
-  text: {
-    padding: 6,
-    textAlign: 'center',
-    fontSize: 12,
-  },
-
-  dateModal: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  datePickerBox: {
-    backgroundColor: '#fff',
-    padding: 16,
+    backgroundColor: '#F1F5F9',
     borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 45,
+    gap: 5,
   },
-  doneBtn: {
-    color: '#5086E7',
-    textAlign: 'center',
-    marginTop: 10,
+  filterText: { color: '#475569', fontSize: 13, fontWeight: '500' },
+  searchBtn: { backgroundColor: '#5086E7', padding: 10, borderRadius: 10 },
+  clearBtn: {
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  amountContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editedText: {
+    fontSize: 10,
+    color: '#EF4444',
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  statSplitWrapper: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    gap: 10,
+  },
+  statSplitBox: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: '#F8FAFC',
+    borderLeftWidth: 4,
+  },
+  buffaloBorder: { borderLeftColor: '#8B5CF6' },
+  cowBorder: { borderLeftColor: '#F59E0B' },
+  statSplitHeader: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  statSplitSub: {
+    fontSize: 11,
+    color: '#64748B',
+  },
+  boldText: {
     fontWeight: '600',
+    color: '#334155',
   },
-
+  tableWrapper: {
+    marginHorizontal: 16,
+    borderRadius: 15,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+    elevation: 2,
+  },
+  head: { height: 48, backgroundColor: '#5086E7' },
+  headText: {
+    textAlign: 'center',
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  rowStyle: { height: 50, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  rowText: {
+    textAlign: 'center',
+    color: '#334155',
+    fontSize: 12,
+    fontWeight: '500',
+  },
   centeredView: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalView: {
-    width: '85%',
+    width: '90%',
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 20,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    marginTop: 10,
-    borderRadius: 6,
-  },
-  saveBtn: {
-    backgroundColor: '#5086E7',
-    padding: 12,
-    borderRadius: 6,
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  IconContainer: {
-    width: '100%',
-    height: 40,
+  modalHeader: {
     flexDirection: 'row',
-    // alignItems: "center",
-    justifyContent: 'flex-start',
-    alignSelf: 'flex-start',
-    gap: 10,
-    marginLeft: 12,
-  },
-  iconWrapper: {
-    width: 50,
-    height: 50,
-    borderRadius: 35,
-    borderWidth: 2,
-    borderColor: '#ccc',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#1E293B' },
+  animalSelector: {
+    flexDirection: 'row',
     justifyContent: 'center',
+    gap: 20,
+    marginBottom: 20,
+  },
+  animalBtn: {
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    width: 100,
+  },
+  selectedBtn: { borderColor: '#5086E7', backgroundColor: '#EFF6FF' },
+  animalIcon: { width: 50, height: 50, resizeMode: 'contain' },
+  animalLabel: { fontSize: 12, marginTop: 5, color: '#64748B' },
+  selectedLabel: { color: '#5086E7', fontWeight: 'bold' },
+  inputRow: { flexDirection: 'row', gap: 15, marginBottom: 15 },
+  modalInputBox: { flex: 1 },
+  inputLabel: {
+    fontSize: 12,
+    color: '#64748B',
+    marginBottom: 5,
+    marginLeft: 4,
+  },
+  modalInput: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    fontSize: 16,
+    color: '#1E293B',
+  },
+  dateSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    padding: 12,
+    borderRadius: 12,
+    gap: 10,
+    marginBottom: 20,
+  },
+  dateSelectorText: { color: '#475569', fontWeight: '500' },
+  saveActionBtn: {
+    backgroundColor: '#5086E7',
+    padding: 15,
+    borderRadius: 15,
+    alignItems: 'center',
+  },
+  saveActionText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  datePickerBox: {
     backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 20,
+    alignItems: 'center',
   },
-  icon: {
-    width: 40,
-    height: 40,
-    resizeMode: 'contain',
+  doneBtn: {
+    color: '#5086E7',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 15,
   },
-  selected: {
-    borderColor: '#2e86de',
-    backgroundColor: '#eaf2ff',
+  doneActionBtn: {
+    backgroundColor: '#5086E7',
+    width: '100%',
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 15,
+  },
+  doneActionText: { color: '#fff', textAlign: 'center', fontWeight: 'bold' },
+  disabledTouch: {
+    opacity: 0.6,
   },
 });
+
+export default EntriesTable;

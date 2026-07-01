@@ -84,6 +84,7 @@ const Farmers = () => {
     })
       .then(async (res: any) => {
         const { users } = await res.json();
+
         const data = users
           .map((u: any) => {
             const usr = u;
@@ -110,9 +111,7 @@ const Farmers = () => {
       (!Farmer.name ||
         !Farmer.phoneNumber ||
         !Farmer.password ||
-        !Farmer.userCode ||
-        !Farmer.cowRate ||
-        !Farmer.buffaloRate) &&
+        !Farmer.userCode) &&
       !isEditFarmer
     ) {
       Toast.show({
@@ -131,6 +130,10 @@ const Farmers = () => {
       userType: 'farmer',
       firmId: firm.id,
     };
+
+    console.log("payload : ",payload);
+    // return
+    
     await fetch(`${BASE_URL}/user/create`, {
       method: 'POST',
       headers: {
@@ -140,6 +143,8 @@ const Farmers = () => {
     })
       .then(async (res: any) => {
         const { user, status } = await res.json();
+        console.log("user : ",user);
+        
         if (status === 401) {
           setIsLoading(false);
 
@@ -168,6 +173,9 @@ const Farmers = () => {
         getFarmers();
       })
       .catch((e: any) => {
+        const {message} = e.response.message
+        console.log("message : ",message);
+        
         console.log(e);
       });
 
@@ -1178,7 +1186,7 @@ const styles = StyleSheet.create({
     },
   },
   timeContainer: {
-    marginLeft:5,
+    marginLeft: 5,
     flexDirection: 'row',
     gap: 10, // spacing between circles (or use marginRight)
   },

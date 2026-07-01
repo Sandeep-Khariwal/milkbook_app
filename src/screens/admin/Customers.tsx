@@ -185,9 +185,7 @@ const Customers = () => {
       (!customer.name ||
         !customer.phoneNumber ||
         !customer.password ||
-        !customer.userCode ||
-        !customer.cowRate ||
-        !customer.buffaloRate) &&
+        !customer.userCode ) &&
       !isEditCustomer
     ) {
       Toast.show({

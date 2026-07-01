@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
   StyleSheet,
@@ -7,6 +7,10 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  SafeAreaView,
+  StatusBar,
+  ScrollView,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import IconLogout from 'react-native-vector-icons/AntDesign';
@@ -20,133 +24,109 @@ import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import EntriesTable from '../customers/EntriesTable';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
 import DatePicker from 'react-native-date-picker';
+import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 
 const FarmerHome = ({ route }: { route: any }) => {
   const id = route.params.id;
-
   const userType = route.params.userType;
-
   const firm = useSelector((state: any) => state.firm.value);
   const isFarmer = firm.role === 'farmer';
+  const isAdmin = firm.role === 'admin';
 
   const [showLogout, setShowLogout] = useState<boolean>(false);
   const dispatch = useDispatch();
-
   const [earnings, setEarnings] = useState<number>(0);
-  const [totalWeight, setTotalWeight] = useState<number>(0);
+  const [totalBufallowWeight, setBuffalowTotalWeight] = useState<number>(0);
+  const [totalCowWeight, setCowTotalWeight] = useState<number>(0);
+
+  const [totalBuffaloAmount, setBuffaloTotalAmount] = useState<number>(0);
+  const [totalCowAmount, setCowTotalAmount] = useState<number>(0);
+
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigation = useNavigation<any>();
+  const [scrollNow, setScrollNow] = useState<boolean>(false);
+
   const [showAddPaymentModal, setShowAddPaymentModal] =
     useState<boolean>(false);
-  const [customer, setCustomer] = useState<{
-    _id: string;
-    name: string;
-    userCode: string;
-    buffaloRate: number;
-    cowRate: number;
-    phoneNumber: string;
-    cowMilk?: {
-      activeCowMilk: boolean;
-      fixedAmount: boolean;
-      fatAmount: boolean;
-      snfAmount: boolean;
-      morningTimeMilk: boolean;
-      eveningTimeMilk: boolean;
-    };
-    buffaloMilk?: {
-      activeBuffaloMilk: boolean;
-      fixedAmount: boolean;
-      fatAmount: boolean;
-      snfAmount: boolean;
-      morningTimeMilk: boolean;
-      eveningTimeMilk: boolean;
-    };
-  }>({
+  const [customer, setCustomer] = useState<any>({
     name: '',
     phoneNumber: '',
     _id: '',
     userCode: '',
-    buffaloRate: 0,
-    cowRate: 0,
-    cowMilk: {
-      activeCowMilk: false,
-      fixedAmount: false,
-      fatAmount: false,
-      snfAmount: false,
-      morningTimeMilk: false,
-      eveningTimeMilk: false,
-    },
-    buffaloMilk: {
-      activeBuffaloMilk: false,
-      fixedAmount: false,
-      fatAmount: false,
-      snfAmount: false,
-      morningTimeMilk: false,
-      eveningTimeMilk: false,
-    },
   });
-
   const [cashPayment, setCashPayment] = useState<string>('');
   const [cashPaymentDescription, setCashPaymentDescription] =
     useState<string>('');
   const [open, setOpen] = useState<boolean>(false);
   const [date, setDate] = useState<Date>(new Date());
 
+  const scrollRef = useRef<any>(null);
+  const [tablePosition, setTablePosition] = useState(0);
+
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollToEnd({ animated: true });
+    }
+  };
+
+  useEffect(() => {
+    if (!isLoading && customer._id && scrollNow) {
+      setTimeout(() => {
+        scrollToBottom();
+      }, 700);
+    }
+  }, [isLoading, customer._id, scrollNow]);
+
   useEffect(() => {
     getUser();
   }, []);
 
-  if (isLoading) {
-    return <LoadingOverlay visible={isLoading} />;
-  }
-
   const getUser = async () => {
     setIsLoading(true);
-    await fetch(`${BASE_URL}/user/getUser/${id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-      .then(async (res: any) => {
-        const { user } = await res.json();
+    try {
+      const response = await fetch(`${BASE_URL}/user/getUser/${id}`);
+      const { user } = await response.json();
+      setEarnings(user.earnings);
+      setCustomer(user);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        setEarnings(user.earnings);
-        const newUser = {
-          _id: user._id,
-          name: user.name,
-          userCode: user.userCode,
-          buffaloRate: user.buffaloRate,
-          cowRate: user.cowRate,
-          phoneNumber: user.phoneNumber,
-          cowMilk: user?.cowMilk,
-          buffaloMilk: user?.buffaloMilk,
-        };
-        setCustomer(newUser);
+  const Logout = async () => {
+    await deleteToken();
+    dispatch(setFirmDetails({ name: '', id: '', role: '' }));
+  };
+
+  const handleSaveCurrentBalance = async () => {
+    setIsLoading(true);
+    await fetch(`${BASE_URL}/user/createBooking/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cowWeight: totalCowWeight,
+        buffalowWeight: totalBufallowWeight,
+        cowAmount: totalCowAmount,
+        buffaloAmount: totalBuffaloAmount,
+        totalAmount: earnings,
+      }),
+    })
+      .then((res: any) => {
         setIsLoading(false);
-        setTotalWeight(0);
+        Toast.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Balance Saved',
+          textBody: `Current balance of ₹${earnings.toFixed(
+            2,
+          )} recorded successfully!`,
+        });
       })
       .catch((e: any) => {
         console.log(e);
         setIsLoading(false);
       });
-  };
-
-  const Logout = async () => {
-    await deleteToken();
-    const firmData = {
-      name: '',
-      id: '',
-      role: '',
-    };
-    dispatch(setFirmDetails(firmData));
-  };
-
-  const SeeHistory = () => {
-    navigation.navigate('History', {
-      customerId: customer._id,
-      userType: 'farmer',
-    });
   };
 
   const AddPayment = async () => {
@@ -158,7 +138,6 @@ const FarmerHome = ({ route }: { route: any }) => {
       });
       return;
     }
-
     const payload = {
       firmId: firm.id,
       amount: -Number(cashPayment),
@@ -169,381 +148,328 @@ const FarmerHome = ({ route }: { route: any }) => {
     };
 
     setIsLoading(true);
-    await fetch(`${BASE_URL}/user/setPayment/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
-      .then((x: any) => {
-        setShowAddPaymentModal(false);
-        setCashPayment('');
-        setCashPaymentDescription('');
-        setIsLoading(false);
-        getUser();
-      })
-      .catch((e: any) => {
-        console.log(e);
+    try {
+      await fetch(`${BASE_URL}/user/setPayment/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
+      setShowAddPaymentModal(false);
+      setCashPayment('');
+      setCashPaymentDescription('');
+      getUser();
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (isLoading) return <LoadingOverlay visible={isLoading} />;
 
   return (
     <View style={styles.container}>
-      <View style={{ ...styles.heroContainer }}>
-        {/* marginTop: 50 */}
-        {!isFarmer && (
-          <TouchableOpacity
-            onPress={() => {
-              navigation.goBack();
-            }}
-            style={{ ...styles.backBox, marginTop: 10 }}
-          >
-            <Icon name="chevron-back" size={32} color="#FFF" />
-            <Text style={styles.milkFarmText}>Back</Text>
-          </TouchableOpacity>
-        )}
+      <StatusBar backgroundColor="#0F172A" barStyle="light-content" />
 
-        <Text style={{ ...styles.milkFarmText, marginTop: isFarmer ? 30 : 15 }}>
-          {String(firm?.name).toUpperCase()}
-        </Text>
-        {isFarmer && (
-          <Text style={{ color: '#fff', fontSize: 16, marginTop: 5 }}>
-            {customer.name}({customer.userCode}), {customer.phoneNumber}
-          </Text>
-        )}
-      </View>
-
-      <View style={styles.historyCont}>
-        <View style={{ width: '50%' }}>
-          <TouchableOpacity style={styles.deletebuttonYes} onPress={SeeHistory}>
-            <Text style={{ color: '#fff' }}> History</Text>
-          </TouchableOpacity>
-        </View>
-
-        {!isFarmer && (
-          <View style={{ width: '80%' }}>
-            <TouchableOpacity
-              style={styles.deletebuttonYes}
-              onPress={() => setShowAddPaymentModal(true)}
-            >
-              <Text style={{ color: '#fff' }}>Add Payment</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {isFarmer && (
-          <View
-            style={{
-              height: 45,
-              width: '50%',
-              paddingLeft: 10,
-              display: 'flex',
-              alignItems: 'flex-end',
-            }}
-          >
-            <IconLogout
-              name="logout"
-              size={32}
-              color="#5086E7"
-              onPress={() => {
-                setShowLogout(true);
-              }}
-            />
-          </View>
-        )}
-      </View>
-
-      <View
-        style={{
-          ...styles.eraningBox,
-          backgroundColor: earnings < 0 ? '#dccfcfff' : '#e1e6e2ff',
-          borderColor: earnings < 0 ? '#dccfcfff' : '#e1e6e2ff',
-        }}
-      >
-        <View
-          style={{
-            width: '100%',
-            paddingLeft: 15,
-            paddingRight: 15,
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Text style={{ fontSize: 16, color: '#3b613cff' }}>
-            {customer.name}
-          </Text>
-          <Text style={{ fontSize: 16, color: '#3b613cff' }}>
-            Code: {customer.userCode}
-          </Text>
-        </View>
-        <Text
-          style={{
-            ...styles.milkFarmText,
-            color: earnings < 0 ? '#713333ff' : '#3b613cff',
-            fontSize: 20,
-          }}
-        >
-          Total Earnings
-        </Text>
-        <View
-          style={{
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingTop: 10,
-            gap: 5,
-          }}
-        >
-          <FaIcon
-            name="rupee"
-            size={30}
-            color={earnings < 0 ? '#713333ff' : '#3b613cff'}
-            onPress={() => {
-              navigation.goBack();
-            }}
-          />
-          <Text
-            style={{
-              ...styles.milkFarmText,
-              color: earnings < 0 ? '#713333ff' : '#3b613cff',
-              marginTop: 4,
-            }}
-          >
-            {earnings?.toFixed(2) ?? 0}
-          </Text>
-        </View>
-      </View>
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={showLogout}
-        onRequestClose={() => {}}
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'red',
-          alignSelf: 'center',
-        }}
-      >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text
-              style={{
-                fontSize: 18,
-                color: '#727276ff',
-                textAlign: 'center',
-              }}
-            >
-              Are you sure?. you want to logout
-            </Text>
-
-            <View style={styles.formBox}>
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {!isFarmer && (
               <TouchableOpacity
-                style={styles.deletebutton}
-                onPress={() => setShowLogout(false)}
+                onPress={() => navigation.goBack()}
+                style={styles.backButton}
               >
-                <Text style={{ color: '#5086E7' }}>Cancel</Text>
+                <Icon name="chevron-back" size={30} color="#FFF" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.deletebuttonYes} onPress={Logout}>
-                <Text style={{ color: '#fff' }}>Yes</Text>
-              </TouchableOpacity>
+            )}
+            <View>
+              <Text style={styles.welcome}>Welcome Back 👋</Text>
+              <Text style={styles.company}>
+                {String(firm?.name).toUpperCase()}
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.profileBtn}
+            onPress={() => isFarmer && setShowLogout(true)}
+          >
+            {isFarmer ? (
+              <IconLogout name="logout" size={22} color="#fff" />
+            ) : (
+              <Icon name="person" size={22} color="#fff" />
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView
+        ref={scrollRef}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 30 }}
+      >
+        <View style={styles.profileCard}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {customer.name ? customer.name.charAt(0).toUpperCase() : 'U'}
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.name}>{customer.name || 'Loading...'}</Text>
+            <Text style={styles.subText}>Code: {customer.userCode}</Text>
+            <Text style={styles.subText}>{customer.phoneNumber}</Text>
+          </View>
+        </View>
+
+        <View
+          style={[
+            styles.balanceCard,
+            earnings < 0 && { backgroundColor: '#EF4444' },
+          ]}
+        >
+          <Text style={styles.balanceTitle}>Total Earnings</Text>
+          <View style={styles.rowCenter}>
+            <FaIcon name="rupee" size={26} color="#fff" />
+            <Text style={styles.balanceAmount}>
+              {earnings?.toFixed(2) ?? 0}
+            </Text>
+          </View>
+
+          <View style={styles.statsRow}>
+            <View style={styles.statBox}>
+              <Text style={styles.statLabel}>Buffalo</Text>
+              <View style={styles.metaMetricRow}>
+                <Text style={styles.metaMetricLabel}>Wt:</Text>
+                <Text style={styles.statValue}>
+                  {parseFloat(totalBufallowWeight.toFixed(2))} KG
+                </Text>
+              </View>
+              <View style={styles.metaMetricRow}>
+                <Text style={styles.metaMetricLabel}>Amt:</Text>
+                <Text style={styles.statValue}>
+                  ₹{totalBuffaloAmount.toFixed(2)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.statBox}>
+              <Text style={styles.statLabel}>Cow</Text>
+              <View style={styles.metaMetricRow}>
+                <Text style={styles.metaMetricLabel}>Wt:</Text>
+                <Text style={styles.statValue}>
+                  {parseFloat(totalCowWeight.toFixed(2))} KG
+                </Text>
+              </View>
+              <View style={styles.metaMetricRow}>
+                <Text style={styles.metaMetricLabel}>Amt:</Text>
+                <Text style={styles.statValue}>
+                  ₹{totalCowAmount.toFixed(2)}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
-      </Modal>
-      {!isFarmer && (
-        <AddEntryAndSale
-          customer={customer}
-          userType={userType}
-          dataUpdate={() => {
-            getUser();
-          }}
-        />
-      )}
-      <EntriesTable
-        userId={customer._id}
-        isCustomer={isFarmer}
-        customer={customer}
-        userType={userType}
-        dataUpdate={() => {
-          getUser();
-        }}
-        setTotalEarn={(wt, amnt) => {
-          setTotalWeight(wt);
-          setEarnings(amnt);
-        }}
-      />
 
+        <View style={styles.actionButtonContainer}>
+          <TouchableOpacity
+            style={styles.historyBtn}
+            onPress={() =>
+              navigation.navigate('History', {
+                customerId: customer._id,
+                userType: 'farmer',
+              })
+            }
+          >
+            <Icon name="time" size={20} color="#fff" />
+            <Text style={styles.btnText}>History</Text>
+          </TouchableOpacity>
+          {!isFarmer && (
+            <TouchableOpacity
+              style={styles.paymentBtn}
+              onPress={() => setShowAddPaymentModal(true)}
+            >
+              <MaterialIcon name="payments" size={22} color="#fff" />
+              <Text style={styles.btnText}>Add Payment</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* MINIMIZED BUTTONS CONTAINER */}
+      <View style={styles.secondaryActionRow}>
+        <TouchableOpacity
+          style={styles.minBtn}
+          onPress={() =>
+            navigation.navigate('SavedBalance', {
+              userId: customer._id,
+              userType: 'farmer',
+            })
+          }
+        >
+          <Icon name="wallet-outline" size={18} color="#1E293B" />
+          <Text style={styles.minBtnText}>Saved Balance</Text>
+        </TouchableOpacity>
+
+        {isAdmin && (
+          <TouchableOpacity
+            style={[styles.minBtn, styles.saveBtnActive]}
+            onPress={handleSaveCurrentBalance}
+          >
+            <Icon name="checkmark-circle-outline" size={18} color="#FFF" />
+            <Text style={styles.minBtnTextActive}>Save Balance</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+        {/* VIEW SAVED BALANCES BUTTON (VISIBLE TO ALL ROLES) */}
+        {/* <TouchableOpacity
+          style={styles.viewBalancesBtn}
+          onPress={() =>
+            navigation.navigate('SavedBalance', {
+              userId: customer._id,
+              userType: 'farmer',
+            })
+          }
+        >
+          <Icon name="wallet-outline" size={20} color="#1E293B" />
+          <Text style={styles.viewBalancesBtnText}>View Saved Balances</Text>
+        </TouchableOpacity>
+
+        {isAdmin && (
+          <TouchableOpacity
+            style={styles.saveBalanceBtn}
+            onPress={handleSaveCurrentBalance}
+          >
+            <Icon name="checkmark-done-circle" size={22} color="#fff" />
+            <Text style={styles.btnText}>Save Current Balance</Text>
+          </TouchableOpacity>
+        )}
+          */}
+
+        {!isFarmer && (
+          <AddEntryAndSale
+            customer={customer}
+            userType={userType}
+            dataUpdate={() => {
+              getUser();
+              setScrollNow(true);
+            }}
+          />
+        )} 
+
+        <View onLayout={event => setTablePosition(event.nativeEvent.layout.y)}>
+          <EntriesTable
+            userId={customer._id}
+            isCustomer={isFarmer}
+            customer={customer}
+            userType={userType}
+            dataUpdate={() => {
+              getUser();
+              setScrollNow(true);
+            }}
+            findTotalWeight={(wt, bW, cW, bAmt = 0, cAmt = 0) => {
+              setBuffalowTotalWeight(bW);
+              setCowTotalWeight(cW);
+              setBuffaloTotalAmount(bAmt);
+              setCowTotalAmount(cAmt);
+            }}
+            setTotalEarn={(wt, amnt) => setEarnings(amnt)}
+          />
+        </View>
+      </ScrollView>
+
+      {/* MODALS */}
       <Modal
         visible={showAddPaymentModal}
         animationType="fade"
         transparent={true}
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'red',
-          alignSelf: 'center',
-        }}
       >
         <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <View
-              style={{
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <Text style={{ fontWeight: 700, fontSize: 20 }}>Add Payment</Text>
+          <View style={styles.modalContentCard}>
+            <View style={styles.modalHeaderRow}>
+              <Text style={styles.modalHeaderTitle}>Add Payment</Text>
               <FeIcon
                 name="x"
                 size={26}
                 color="#333"
-                onPress={() => {
-                  setShowAddPaymentModal(false);
-                }}
+                onPress={() => setShowAddPaymentModal(false)}
               />
             </View>
-            <View style={styles.stockContainer}>
-              <View style={styles.inputBox}>
-                <TextInput
-                  editable
-                  multiline
-                  numberOfLines={4}
-                  maxLength={10}
-                  onChangeText={text => setCashPayment(text)}
-                  value={cashPayment}
-                  style={styles.textInput}
-                  placeholder="Set Payment"
-                />
-              </View>
+            <View style={styles.modalInputWrapper}>
+              <Text style={styles.inputLabel}>Amount</Text>
+              <TextInput
+                keyboardType="numeric"
+                onChangeText={setCashPayment}
+                value={cashPayment}
+                style={styles.modalTextInput}
+                placeholder="Enter amount"
+              />
+            </View>
+            <View style={styles.modalInputWrapper}>
+              <Text style={styles.inputLabel}>Select Date</Text>
               <TouchableOpacity
-                style={styles.inputBox}
+                style={styles.datePickerToggle}
                 onPress={() => setOpen(true)}
               >
-                <View>
-                  <TextInput
-                    editable={false}
-                    value={date.toDateString()}
-                    onChangeText={() => {}} // ❌ ignores input
-                    style={styles.textInput}
-                    placeholder="pick Date"
-                  />
-                  <Modal visible={open} transparent animationType="fade">
-                    <View
-                      style={{
-                        flex: 1,
-                        backgroundColor: 'rgba(0,0,0,0.4)',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <View
-                        style={{
-                          backgroundColor: '#fff',
-                          borderRadius: 12,
-                          padding: 16,
-                          width: '90%',
-                        }}
-                      >
-                        <DatePicker
-                          date={date}
-                          onDateChange={setDate}
-                          mode="datetime"
-                        />
-
-                        {/* Buttons */}
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            justifyContent: 'space-around',
-                            marginTop: 12,
-                          }}
-                        >
-                          <TouchableOpacity
-                            onPress={() => setOpen(false)}
-                            style={{
-                              paddingVertical: 10,
-                              paddingHorizontal: 16,
-                              marginRight: 10,
-                              borderWidth: 1,
-                              borderColor: '#5086E7',
-                              width: '30%',
-                              borderRadius: 10,
-                            }}
-                          >
-                            <Text
-                              style={{
-                                color: '#999',
-                                fontWeight: '600',
-                                textAlign: 'center',
-                              }}
-                            >
-                              Cancel
-                            </Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            onPress={() => setOpen(false)}
-                            style={{
-                              paddingVertical: 10,
-                              paddingHorizontal: 16,
-                              backgroundColor: '#5086E7',
-                              width: '30%',
-                              borderRadius: 10,
-                            }}
-                          >
-                            <Text
-                              style={{
-                                color: '#fff',
-                                fontWeight: '600',
-                                textAlign: 'center',
-                              }}
-                            >
-                              Done
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </View>
-                  </Modal>
-                </View>
+                <Text style={{ color: '#333' }}>{date.toDateString()}</Text>
+                <FeIcon name="calendar" size={20} color="#5086E7" />
               </TouchableOpacity>
             </View>
-
-            <View style={styles.stockContainer}>
-              <View style={[styles.inputBox, { width: '100%' }]}>
-                <TextInput
-                  editable
-                  multiline
-                  numberOfLines={4}
-                  onChangeText={text => setCashPaymentDescription(text)}
-                  value={cashPaymentDescription}
-                  style={styles.textInput}
-                  placeholder="Description"
-                />
-              </View>
+            <View style={styles.modalInputWrapper}>
+              <Text style={styles.inputLabel}>Description</Text>
+              <TextInput
+                multiline
+                numberOfLines={3}
+                onChangeText={setCashPaymentDescription}
+                value={cashPaymentDescription}
+                style={[
+                  styles.modalTextInput,
+                  { height: 80, textAlignVertical: 'top' },
+                ]}
+                placeholder="Note (optional)"
+              />
             </View>
+            <TouchableOpacity
+              style={styles.submitPaymentBtn}
+              onPress={AddPayment}
+            >
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>
+                Confirm Payment
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
-            <View style={styles.stockContainer}>
+      <DatePicker
+        modal
+        open={open}
+        date={date}
+        mode="datetime"
+        onConfirm={selectedDate => {
+          setOpen(false);
+          setDate(selectedDate);
+        }}
+        onCancel={() => setOpen(false)}
+      />
+
+      <Modal animationType="fade" transparent visible={showLogout}>
+        <View style={styles.centeredView}>
+          <View style={styles.logoutModalView}>
+            <Text style={styles.logoutTitle}>Logout?</Text>
+            <Text style={styles.logoutSub}>
+              Are you sure you want to logout from the farm portal?
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
               <TouchableOpacity
-                style={[styles.deletebuttonYes, { width: '100%' }]}
-                onPress={AddPayment}
+                style={styles.cancelBtn}
+                onPress={() => setShowLogout(false)}
               >
-                <Text style={{ color: '#fff' }}>Payment</Text>
+                <Text style={{ color: '#0F172A', fontWeight: '600' }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.confirmBtn} onPress={Logout}>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>Logout</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -554,120 +480,259 @@ const FarmerHome = ({ route }: { route: any }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    minHeight: '100%',
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  header: {
+    backgroundColor: '#0F172A',
+    paddingTop: Platform.OS === 'ios' ? 50 : 40,
+    paddingBottom: 25,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    elevation: 10,
   },
-  heroContainer: {
-    width: '100%',
-    borderBottomRightRadius: 28,
-    borderBottomLeftRadius: 28,
-    display: 'flex',
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#5086E7',
-    paddingTop: 20,
-    paddingBottom: 20,
   },
-  backBox: {
-    width: '100%',
-    height: 50,
-    display: 'flex',
+  backButton: { marginRight: 15, padding: 5 },
+  welcome: { color: '#94A3B8', fontSize: 14 },
+  company: { color: '#fff', fontSize: 26, fontWeight: '800', marginTop: 4 },
+  profileBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#1E293B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  profileCard: {
+    margin: 18,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
+    elevation: 5,
   },
-  milkFarmText: {
-    fontSize: 24,
-    color: 'white',
-    fontWeight: 500,
-    fontFamily: 'sans-serif',
-  },
-  eraningBox: {
-    width: '90%',
-    // height: 200,
-    borderWidth: 1,
-    paddingTop: 20,
-    paddingBottom: 20,
-
-    borderRadius: 20,
-    alignSelf: 'center',
-    display: 'flex',
-    alignItems: 'center',
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#2563EB',
     justifyContent: 'center',
-    marginTop: 10,
+    alignItems: 'center',
+    marginRight: 15,
   },
+  avatarText: { color: '#fff', fontWeight: 'bold', fontSize: 24 },
+  name: { fontSize: 20, fontWeight: '700', color: '#0F172A' },
+  subText: { color: '#64748B', marginTop: 4, fontSize: 14 },
+  balanceCard: {
+    marginHorizontal: 18,
+    backgroundColor: '#2563EB',
+    borderRadius: 24,
+    padding: 24,
+    elevation: 8,
+  },
+  balanceTitle: { color: '#BFDBFE', fontSize: 16, fontWeight: '600' },
+  rowCenter: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
+  balanceAmount: {
+    color: '#fff',
+    fontSize: 36,
+    fontWeight: '800',
+    marginLeft: 10,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    marginTop: 25,
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  statBox: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    width: '48%',
+    borderRadius: 16,
+    padding: 14,
+  },
+  statLabel: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  metaMetricRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  metaMetricLabel: { color: '#DBEAFE', fontSize: 12, fontWeight: '500' },
+  statValue: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  actionButtonContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 18,
+    marginTop: 20,
+    gap: 12,
+  },
+  historyBtn: {
+    flex: 1,
+    backgroundColor: '#1E293B',
+    paddingVertical: 15,
+    borderRadius: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
+  },
+  paymentBtn: {
+    flex: 1,
+    backgroundColor: '#10B981',
+    paddingVertical: 15,
+    borderRadius: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
+  },
+  viewBalancesBtn: {
+    backgroundColor: '#FFF',
+    marginHorizontal: 18,
+    marginTop: 12,
+    paddingVertical: 14,
+    borderRadius: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    elevation: 2,
+  },
+  viewBalancesBtnText: { color: '#1E293B', fontWeight: '700', fontSize: 15 },
+  saveBalanceBtn: {
+    backgroundColor: '#4F46E5',
+    marginHorizontal: 18,
+    marginTop: 12,
+    paddingVertical: 14,
+    borderRadius: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    elevation: 4,
+  },
+  btnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   centeredView: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
-  modalView: {
-    margin: 20,
+  modalContentCard: {
     backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 35,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    borderRadius: 25,
+    padding: 25,
+    width: '90%',
+    elevation: 10,
   },
-  formBox: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+  modalHeaderRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 20,
-  },
-  deletebutton: {
-    width: '40%',
-    borderWidth: 1,
+    justifyContent: 'space-between',
     alignItems: 'center',
-    borderColor: '#5086E7',
-    borderRadius: 10,
-    height: 40,
-    display: 'flex',
-    justifyContent: 'center',
+    marginBottom: 20,
   },
-  deletebuttonYes: {
-    width: '40%',
-    alignItems: 'center',
-    borderRadius: 10,
-    height: 40,
-    display: 'flex',
-    justifyContent: 'center',
-    backgroundColor: '#5086E7',
+  modalHeaderTitle: { fontSize: 22, fontWeight: '800', color: '#0F172A' },
+  modalInputWrapper: { marginBottom: 15 },
+  inputLabel: {
+    fontSize: 14,
+    color: '#64748B',
+    marginBottom: 8,
+    fontWeight: '600',
   },
-  stockContainer: {
-    width: '100%',
-    display: 'flex',
+  modalTextInput: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    padding: 15,
+    fontSize: 16,
+    color: '#0F172A',
+  },
+  datePickerToggle: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    padding: 15,
     flexDirection: 'row',
-    gap: 10,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  submitPaymentBtn: {
+    backgroundColor: '#2563EB',
+    padding: 18,
+    borderRadius: 16,
+    alignItems: 'center',
     marginTop: 10,
   },
-  historyCont: {
-    width: '100%',
-    height: 70,
-    padding: 10,
-    display: 'flex',
-    flexDirection: 'row',
+  logoutModalView: {
+    backgroundColor: 'white',
+    borderRadius: 24,
+    padding: 30,
     alignItems: 'center',
-    justifyContent: 'space-between',
+    width: '85%',
   },
-  inputBox: {
-    width: '50%',
-    backgroundColor: '#ebeef2ff',
-    borderRadius: 7,
-    height: 40,
-    fontWeight: '700',
-    marginTop: 20,
+  logoutTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 10,
   },
-  textInput: {
-    padding: 10,
+  logoutSub: {
+    color: '#64748B',
+    textAlign: 'center',
+    fontSize: 16,
+    lineHeight: 22,
   },
+  cancelBtn: {
+    padding: 15,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    flex: 1,
+    alignItems: 'center',
+  },
+  confirmBtn: {
+    padding: 15,
+    borderRadius: 12,
+    backgroundColor: '#EF4444',
+    flex: 1,
+    alignItems: 'center',
+  },
+  secondaryActionRow: {
+    flexDirection: 'row',
+    marginHorizontal: 18,
+    marginTop: 12,
+    gap: 12,
+  },
+  minBtn: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    paddingVertical: 12,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+  },
+  minBtnText: { color: '#1E293B', fontWeight: '600', fontSize: 13 },
+  saveBtnActive: {
+    backgroundColor: '#4F46E5',
+    borderColor: '#4F46E5',
+  },
+  minBtnTextActive: { color: '#FFF', fontWeight: '600', fontSize: 13 },
 });
 
 export default FarmerHome;

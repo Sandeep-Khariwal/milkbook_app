@@ -84,9 +84,6 @@ const SubscriptionPlan = () => {
 
       const {data} = await res.json();
 
-      console.log("order res : ",data);
-      
-
       const options = {
         description: plan.title,
         currency: 'INR',

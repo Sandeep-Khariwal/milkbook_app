@@ -1,91 +1,84 @@
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
-import React, { useCallback, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Modal,
+  Pressable,
+  Platform,
+} from 'react-native';
 import { deleteToken } from '../../token/tokenStorage';
-import { useNavigation } from '@react-navigation/native';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { setFirmDetails } from '../../redux/slices/firmSlice';
 import IconLogout from 'react-native-vector-icons/AntDesign';
 
 const LogoutButton = (props: { showText: boolean }) => {
-  const bottomSheetRef = useRef<BottomSheet>(null);
-  const [bottomSheetIndex, setBottomSheetIndex] = useState<number>(-1);
-  const handleSheetChanges = useCallback((index: number) => {
-    setBottomSheetIndex(index);
-  }, []);
+  const [modalVisible, setModalVisible] = useState(false);
   const dispatch = useDispatch();
 
-  const Logout = async () => {
-    bottomSheetRef.current?.close();
+  const handleLogout = async () => {
+    setModalVisible(false);
     await deleteToken();
-    const firmData = {
-      name: '',
-      id: '',
-      role: '',
-    };
+    const firmData = { name: '', id: '', role: '' };
     dispatch(setFirmDetails(firmData));
   };
-  return (
-    <View style={{ flex: 1 }}>
-      <TouchableOpacity
-        style={{
-          alignItems: 'center',
-          backgroundColor: '#5185e6ff',
-          borderRadius: 20,
-          height: 50,
-          display: 'flex',
-          flexDirection: 'row',
-          gap: 10,
-          padding:10,
-          paddingLeft:16
-        }}
-        onPress={() => setBottomSheetIndex(0)}
-      >
-        <IconLogout
-          name="logout"
-          size={24}
-          color="#FFF"
-          onPress={() => {
-          }}
-        />
-        {props.showText && (
-          <Text style={{ color: '#fff', fontWeight: 600, fontSize: 18 }}>
-            Logout
-          </Text>
-        )}
-      </TouchableOpacity>
-      <BottomSheet
-        ref={bottomSheetRef}
-        onChange={handleSheetChanges}
-        index={bottomSheetIndex}
-        enablePanDownToClose
-      >
-        <BottomSheetView style={styles.contentContainer}>
-          <View>
-            <Text
-              style={{
-                fontSize: 18,
-                color: '#727276ff',
-                textAlign: 'center',
-              }}
-            >
-              Are you sure?. you want to logout
-            </Text>
 
-            <View style={styles.formBox}>
-              <TouchableOpacity
-                style={styles.deletebutton}
-                onPress={() => bottomSheetRef.current?.close()}
-              >
-                <Text style={{ color: '#5086E7' }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.deletebuttonYes} onPress={Logout}>
-                <Text style={{ color: '#fff' }}>Yes</Text>
-              </TouchableOpacity>
+  return (
+    <View style={styles.wrapper}>
+      {/* Trigger Button */}
+      <TouchableOpacity
+        style={styles.triggerButton}
+        onPress={() => setModalVisible(true)}
+        activeOpacity={0.8}
+      >
+        <View style={styles.iconCircle}>
+          <IconLogout name="logout" size={18} color="#ef4444" />
+        </View>
+        {props.showText && <Text style={styles.triggerText}>Sign Out</Text>}
+      </TouchableOpacity>
+
+      {/* Confirmation Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <Pressable 
+          style={styles.overlay} 
+          onPress={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.alertBox}>
+              <View style={styles.warningIconCircle}>
+                <IconLogout name="exclamationcircleo" size={30} color="#ef4444" />
+              </View>
+              
+              <Text style={styles.title}>Confirm Logout</Text>
+              <Text style={styles.subtitle}>
+                Are you sure you want to sign out? You will need to login again to access your data.
+              </Text>
+
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={styles.cancelBtn}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.confirmBtn}
+                  onPress={handleLogout}
+                >
+                  <Text style={styles.confirmBtnText}>Yes, Logout</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </BottomSheetView>
-      </BottomSheet>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
@@ -93,51 +86,111 @@ const LogoutButton = (props: { showText: boolean }) => {
 export default LogoutButton;
 
 const styles = StyleSheet.create({
-  contentContainer: {
-    flex: 1,
-    padding: 36,
-    alignItems: 'center',
-    backgroundColor: '#f3f3f6ff',
-    borderWidth: 1,
-    borderColor: '#e7e7eeff',
-    borderRadius: 5,
+  wrapper: {
+    width: '100%',
   },
-  btnCss: {
-    width: '90%',
-    borderWidth: 1,
-    alignItems: 'center',
-    borderColor: '#5086E7',
-    backgroundColor: '#5086E7',
-    borderRadius: 10,
-    height: 40,
-    display: 'flex',
-    justifyContent: 'center',
-  },
-  formBox: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+  triggerButton: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 20,
-  },
-  deletebutton: {
-    width: '40%',
+    alignItems: 'center',
+    backgroundColor: '#fff1f2', // Soft red tint
+    borderRadius: 12,
+    height: 50,
+    paddingHorizontal: 12,
     borderWidth: 1,
-    alignItems: 'center',
-    borderColor: '#5086E7',
-    borderRadius: 10,
-    height: 40,
-    display: 'flex',
-    justifyContent: 'center',
+    borderColor: '#ffe4e6',
   },
-  deletebuttonYes: {
-    width: '40%',
-    alignItems: 'center',
-    borderRadius: 10,
-    height: 40,
-    display: 'flex',
+  iconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#fff',
     justifyContent: 'center',
-    backgroundColor: '#5086E7',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  triggerText: {
+    color: '#e11d48',
+    fontWeight: '700',
+    fontSize: 16,
+    marginLeft: 12,
+  },
+  // Modal Styles
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)', // Slate-900 with opacity
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    width: '100%',
+    maxWidth: 340,
+  },
+  alertBox: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+  },
+  warningIconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#fff1f2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1e293b',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cancelBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f1f5f9',
+  },
+  cancelBtnText: {
+    color: '#475569',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  confirmBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ef4444',
+  },
+  confirmBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
 });
