@@ -44,10 +44,17 @@ const EntriesTable = (props: {
 
   const [isLoading, setIsLoading] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
-  const [fromDate, setFromDate] = useState<Date | null>(null);
-  const [toDate, setToDate] = useState<Date | null>(null);
-  const [openFromDate, setOpenFromDate] = useState(false);
-  const [openToDate, setOpenToDate] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
+
+  const [fromDate, setFromDate] = useState<Date>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+
+  const [toDate, setToDate] = useState<Date>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  });
   const [isBuffalo, setIsBuffalo] = useState<boolean>(true);
   const [date, setDate] = useState<Date>(new Date());
   const [open, setOpen] = useState<boolean>(false);
@@ -88,7 +95,50 @@ const EntriesTable = (props: {
     if (props.userId) {
       getAllEntries(props.userId);
     }
-  }, [props.userId]);
+  }, [props.userId, fromDate, toDate]);
+
+
+  const currentMonth = new Date();
+
+  const isCurrentMonth =
+    selectedMonth.getMonth() === currentMonth.getMonth() &&
+    selectedMonth.getFullYear() === currentMonth.getFullYear();
+
+
+  const changeMonth = (direction: 'prev' | 'next') => {
+    if (direction === 'next' && isCurrentMonth) {
+      return;
+    }
+
+    const newMonth = new Date(selectedMonth);
+
+    if (direction === 'prev') {
+      newMonth.setMonth(newMonth.getMonth() - 1);
+    } else {
+      newMonth.setMonth(newMonth.getMonth() + 1);
+    }
+
+    setSelectedMonth(newMonth);
+
+    const start = new Date(
+      newMonth.getFullYear(),
+      newMonth.getMonth(),
+      1,
+    );
+
+    const end = new Date(
+      newMonth.getFullYear(),
+      newMonth.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
+
+    setFromDate(start);
+    setToDate(end);
+  };
 
   const getAllEntries = async (id: string) => {
     setIsLoading(true);
@@ -241,31 +291,31 @@ const EntriesTable = (props: {
       </View>,
       ...(firm.role === 'admin'
         ? [
-            <TouchableOpacity
-              disabled={!isEditable}
-              onPress={() => {
-                const editEntry = {
-                  _id: ent._id,
-                  fat: String(ent.fat),
-                  weight: String(ent.weight),
-                  timeZone: ent.timeZone,
-                  date: ent.date
-                };
-                setIsBuffalo(ent.isBuffalo);
-                setMilkEntry(editEntry);
-                setDate(new Date(editEntry.date));
-                setOpenEditModal(true);
-              }}
-              style={!isEditable && styles.disabledTouch}
-            >
-              <FeIcon
-                name="edit-3"
-                size={18}
-                color={isEditable ? "#5086E7" : "#CBD5E1"}
-                style={{ alignSelf: 'center' }}
-              />
-            </TouchableOpacity>,
-          ]
+          <TouchableOpacity
+            disabled={!isEditable}
+            onPress={() => {
+              const editEntry = {
+                _id: ent._id,
+                fat: String(ent.fat),
+                weight: String(ent.weight),
+                timeZone: ent.timeZone,
+                date: ent.date
+              };
+              setIsBuffalo(ent.isBuffalo);
+              setMilkEntry(editEntry);
+              setDate(new Date(editEntry.date));
+              setOpenEditModal(true);
+            }}
+            style={!isEditable && styles.disabledTouch}
+          >
+            <FeIcon
+              name="edit-3"
+              size={18}
+              color={isEditable ? "#5086E7" : "#CBD5E1"}
+              style={{ alignSelf: 'center' }}
+            />
+          </TouchableOpacity>,
+        ]
         : []),
     ];
   });
@@ -276,49 +326,36 @@ const EntriesTable = (props: {
     <View style={styles.container}>
       {/* FILTER SECTION */}
       <View style={styles.filterCard}>
-        <View style={styles.filterRow}>
+        <View style={styles.monthRow}>
           <TouchableOpacity
-            style={styles.filterInput}
-            onPress={() => {
-              setOpenFromDate(true);
-              setFromDate(new Date());
-            }}
+            style={styles.monthBtn}
+            onPress={() => changeMonth('prev')}
           >
-            <FeIcon name="calendar" size={14} color="#666" />
-            <Text style={styles.filterText}>
-              {fromDate ? formatDate(fromDate) : 'From'}
+            <FeIcon name="chevron-left" size={22} color="#FFF" />
+          </TouchableOpacity>
+
+          <View style={styles.monthCard}>
+            <Text style={styles.monthText}>
+              {`${fromDate.getDate()} - ${toDate.getDate()} ${toDate.toLocaleString(
+                'default',
+                { month: 'short' },
+              )}`}
             </Text>
-          </TouchableOpacity>
+          </View>
 
           <TouchableOpacity
-            style={styles.filterInput}
-            onPress={() => {
-              setOpenToDate(true);
-              setToDate(new Date());
-            }}
+            disabled={isCurrentMonth}
+            style={[
+              styles.monthBtn,
+              isCurrentMonth && styles.monthBtnDisabled,
+            ]}
+            onPress={() => changeMonth('next')}
           >
-            <FeIcon name="calendar" size={14} color="#666" />
-            <Text style={styles.filterText}>
-              {toDate ? formatDate(toDate) : 'To'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.searchBtn}
-            onPress={() => getAllEntries(props.userId)}
-          >
-            <FaIcon name="search" size={20} color="#fff" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.clearBtn}
-            onPress={() => {
-              setFromDate(null);
-              setToDate(null);
-              getAllEntries(props.userId);
-            }}
-          >
-            <FeIcon name="refresh-cw" size={20} color="#5086E7" />
+            <FeIcon
+              name="chevron-right"
+              size={22}
+              color={isCurrentMonth ? '#94A3B8' : '#FFF'}
+            />
           </TouchableOpacity>
         </View>
 
@@ -354,20 +391,6 @@ const EntriesTable = (props: {
           />
         </Table>
       </View>
-
-      {/* DATE MODALS */}
-      <DatePickerModal
-        visible={openFromDate}
-        date={fromDate ?? new Date()}
-        onDateChange={setFromDate}
-        onClose={() => setOpenFromDate(false)}
-      />
-      <DatePickerModal
-        visible={openToDate}
-        date={toDate ?? new Date()}
-        onDateChange={setToDate}
-        onClose={() => setOpenToDate(false)}
-      />
 
       {/* EDIT MODAL */}
       <Modal visible={openEditModal} transparent animationType="slide">
@@ -587,6 +610,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  monthBtnDisabled: {
+    backgroundColor: '#E2E8F0',
+  },
   modalView: {
     width: '90%',
     backgroundColor: '#fff',
@@ -675,6 +701,36 @@ const styles = StyleSheet.create({
   doneActionText: { color: '#fff', textAlign: 'center', fontWeight: 'bold' },
   disabledTouch: {
     opacity: 0.6,
+  },
+  monthRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  monthBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#2563EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  monthCard: {
+    flex: 1,
+    marginHorizontal: 12,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  monthText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A',
   },
 });
 

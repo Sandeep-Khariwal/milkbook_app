@@ -7,14 +7,30 @@ import { formatDate } from '../../../utility/helperFunctions';
 import { useIsFocused } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome5';
+import {
+  Modal,
+  TextInput,
+} from "react-native";
+import { ALERT_TYPE, Toast } from "react-native-alert-notification";
+import { Keyboard } from 'react-native';
 
 const Home = ({ navigation }) => {
   const firm = useSelector((state: any) => state.firm.value);
   const [allEntries, setAllEntries] = useState<any[]>([]);
   const [totalWeight, setTotalWeight] = useState<number>(0);
   const [avgFat, setAvgFat] = useState<number>(0);
+  const [farmerWeight, setFarmerWeight] = useState<number>(0);
+  const [customerWeight, setCustomerWeight] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const isFocused = useIsFocused();
+  const [customerAmount, setCustomerAmount] = useState<number>(0);
+  const [saleModal, setSaleModal] = useState(false);
+
+  const [customerName, setCustomerName] = useState("");
+
+  const [saleWeight, setSaleWeight] = useState("");
+
+  const [saleRate, setSaleRate] = useState("");
 
   const [firmInfo, setFirmInfo] = useState<{
     customers: number,
@@ -45,30 +61,56 @@ const Home = ({ navigation }) => {
         headers: { 'Content-Type': 'application/json' },
       });
       const { data, firmInfo } = await res.json();
-      
-      const filteredData = data
-        .filter((ent: any) => ent.customer.userType === 'farmer')
-        .map((ent: any) => ({
-          name: ent.customer.name,
-          fat: ent.fat,
-          userCode: ent.customer.userCode,
-          weight: ent.weight,
-          timeZone: ent.timeZone,
-          amount: ent.amount,
-          date: ent.date,
-        }));
+
+      const filteredData = data.map((ent: any) => ({
+        name: ent.customer.name,
+        fat: ent.fat,
+        userCode: ent.customer.userCode,
+        weight: ent.weight,
+        timeZone: ent.timeZone,
+        amount: ent.amount,
+        date: ent.date,
+        userType: ent.customer.userType,
+      }));
 
       setAllEntries(filteredData);
       if (firmInfo) {
         setFirmInfo(firmInfo);
       }
 
-      const todayTotalWeight = filteredData.reduce((acc: number, curr: any) => acc + curr.weight, 0);
-      setTotalWeight(todayTotalWeight);
 
-      const todayTotalCream = filteredData.reduce((acc: number, curr: any) => acc + (curr.fat * curr.weight), 0);
-      const todayAvgFat = todayTotalWeight > 0 ? todayTotalCream / todayTotalWeight : 0;
-      setAvgFat(Number(todayAvgFat.toFixed(2)));
+      let farmerMilk = 0;
+      let customerMilk = 0;
+      let farmerCream = 0;
+      let customerAmountTotal = 0;
+
+      data.forEach((ent: any) => {
+        if (ent.customer.userType === "farmer") {
+          const weight = Number(ent.weight);
+          const fat = Number(ent.fat);
+
+          farmerMilk += weight;
+          farmerCream += weight * fat;
+        }
+
+        if (ent.customer.userType === "customer") {
+          customerMilk += Number(ent.weight);
+          customerAmountTotal += Number(ent.amount);
+        }
+      });
+
+      setCustomerAmount(customerAmountTotal);
+      setFarmerWeight(farmerMilk);
+      setCustomerWeight(customerMilk);
+
+      // Top Card
+      setTotalWeight(farmerMilk);
+
+      // Average Fat (Farmer only)
+      const averageFat =
+        farmerMilk > 0 ? farmerCream / farmerMilk : 0;
+
+      setAvgFat(Number(averageFat.toFixed(2)));
 
     } catch (e) {
       console.log(e);
@@ -77,73 +119,284 @@ const Home = ({ navigation }) => {
     }
   };
 
+  const saveDairySale = async () => {
+    if (!saleWeight || !saleRate) {
+      Toast.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Warning",
+        textBody: "Please enter quantity and rate.",
+      });
+
+      return;
+    }
+
+    if (Number(saleWeight) <= 0) {
+      Toast.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Warning",
+        textBody: "Invalid quantity.",
+      });
+      return;
+    }
+
+    if (Number(saleRate) <= 0) {
+      Toast.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Warning",
+        textBody: "Invalid rate.",
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const res = await fetch(`${BASE_URL}/dairy-sale/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firm: firm.id,
+          customerName: customerName.trim(),
+          weight: Number(saleWeight),
+          rate: Number(saleRate),
+          date: new Date(),
+        }),
+      });
+
+      const response = await res.json();
+
+      if (response.status === 200) {
+        Toast.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: "Success",
+          textBody: "Dairy Sale Added Successfully.",
+        });
+
+        Keyboard.dismiss();
+
+        // Reset fields
+        setCustomerName("");
+        setSaleWeight("");
+        setSaleRate("");
+        setSaleModal(false);
+
+        // Refresh Home
+        getTodayEntry(firm.id);
+      } else {
+        Toast.show({
+          type: ALERT_TYPE.DANGER,
+          title: "Error",
+          textBody: response.message,
+        });
+      }
+    } catch (error) {
+      console.log(error);
+      Toast.show({
+        type: ALERT_TYPE.DANGER,
+        title: "Error",
+        textBody: "Something went wrong.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (isLoading) return <LoadingOverlay visible={isLoading} />;
+
+  const balance = farmerWeight - customerWeight;
+
+  const totalSale =
+    (Number(saleWeight) || 0) *
+    (Number(saleRate) || 0);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
-      
+
       <View style={styles.headerSection}>
-        <Text style={styles.welcomeLabel}>Welcome Back,</Text>
-        <Text style={styles.firmNameLabel}>{firm.name || 'Dashboard'}</Text>
-        
-        <View style={styles.summaryContainer}>
-          <View style={[styles.infoCard, { borderLeftColor: '#3b82f6' }]}>
-            <View style={styles.iconBoxBlue}>
-              <Icon name="scale-bathroom" size={22} color="#3b82f6" />
-            </View>
-            <View>
-              <Text style={styles.infoLabel}>Total Weight</Text>
-              <Text style={styles.infoValue}>{totalWeight.toFixed(2)} <Text style={styles.smallUnit}>L</Text></Text>
-            </View>
+
+        <View style={styles.headerTop}>
+
+          <View>
+            <Text style={styles.welcomeLabel}>
+              Welcome Back,
+            </Text>
+
+            <Text style={styles.firmNameLabel}>
+              {firm.name || "Dashboard"}
+            </Text>
           </View>
 
-          <View style={[styles.infoCard, { borderLeftColor: '#10b981' }]}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.saleBtn}
+            onPress={() => navigation.navigate("DairySales")}
+          >
+            <Icon
+              name="plus"
+              color="#fff"
+              size={18}
+            />
+
+            <Text style={styles.saleBtnText}>
+              Dairy Sale
+            </Text>
+          </TouchableOpacity>
+
+        </View>
+
+        <View style={styles.totalCard}>
+          <View style={styles.totalLeft}>
+            <Text style={styles.totalTitle}>Today's Total Milk</Text>
+            <Text style={styles.totalValue}>
+              {totalWeight.toFixed(2)}
+              <Text style={styles.totalUnit}> L</Text>
+            </Text>
+          </View>
+
+          <View style={styles.totalIcon}>
+            <Icon
+              name="cup-water"
+              size={38}
+              color="#2563eb"
+            />
+          </View>
+        </View>
+
+        <View style={styles.summaryContainer}>
+
+          <View style={[styles.infoCard, { borderLeftColor: "#10b981" }]}>
             <View style={styles.iconBoxGreen}>
-              <FontAwesome name="percentage" size={18} color="#10b981" />
+              <FontAwesome
+                name="percentage"
+                size={18}
+                color="#10b981"
+              />
             </View>
+
             <View>
               <Text style={styles.infoLabel}>Average Fat</Text>
               <Text style={styles.infoValue}>{avgFat}%</Text>
             </View>
           </View>
+
+          <View style={[styles.infoCard, { borderLeftColor: "#f59e0b" }]}>
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 10,
+                backgroundColor: "#fef3c7",
+                justifyContent: "center",
+                alignItems: "center",
+                marginRight: 12,
+              }}>
+              <FontAwesome
+                name="rupee-sign"
+                size={18}
+                color="#f59e0b"
+              />
+            </View>
+
+            <View>
+              <Text style={styles.infoLabel}>Collected ₹</Text>
+              <Text style={styles.infoValue}>
+                ₹{customerAmount.toFixed(2)}
+              </Text>
+            </View>
+          </View>
+
         </View>
       </View>
 
       <View style={styles.listSection}>
-        {/* PREMIUM STATS GRID SECTION */}
-        <View style={styles.gridContainer}>
-          <View style={styles.gridRow}>
-            <TouchableOpacity 
-              activeOpacity={0.7} 
-              style={[styles.statCard, { borderTopColor: '#6366f1' }]} 
-              onPress={() => navigation.navigate('Farmers')}
-            >
-              <View style={[styles.statIconWrapper, { backgroundColor: '#e0e7ff' }]}>
-                <FontAwesome name="tractor" size={16} color="#6366f1" />
-              </View>
-              <View style={styles.statContent}>
-                <Text style={styles.statCardValue}>{firmInfo?.farmers || 0}</Text>
-                <Text style={styles.statCardLabel}>Farmers</Text>
-              </View>
-            </TouchableOpacity>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 40 }}
+        >
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>Today's Milk Summary</Text>
 
-            <TouchableOpacity 
-              activeOpacity={0.7} 
-              style={[styles.statCard, { borderTopColor: '#ec4899' }]} 
-              onPress={() => navigation.navigate('Customers')}
-            >
-              <View style={[styles.statIconWrapper, { backgroundColor: '#fce7f3' }]}>
-                <FontAwesome name="users" size={14} color="#ec4899" />
+            <View style={styles.summaryRow}>
+
+              <View style={styles.summaryBox}>
+                <Text style={styles.summaryLabel}>Collected</Text>
+                <Text style={styles.summaryValue}>
+                  {farmerWeight.toFixed(2)}L
+                </Text>
+                <Text style={styles.summarySub}>
+                  Farmer
+                </Text>
               </View>
-              <View style={styles.statContent}>
-                <Text style={styles.statCardValue}>{firmInfo?.customers || 0}</Text>
-                <Text style={styles.statCardLabel}>Customers</Text>
+
+              <View style={styles.summaryBox}>
+                <Text style={styles.summaryLabel}>Delivered</Text>
+                <Text style={styles.summaryValue}>
+                  {customerWeight.toFixed(2)}L
+                </Text>
+                <Text style={styles.summarySub}>
+                  Customer
+                </Text>
               </View>
-            </TouchableOpacity>
+
+              <View style={styles.summaryBox}>
+                <Text style={styles.summaryLabel}>Balance</Text>
+
+                <Text
+                  style={[
+                    styles.summaryValue,
+                    {
+                      color:
+                        balance >= 0
+                          ? "#16a34a"
+                          : "#dc2626",
+                    },
+                  ]}>
+                  {balance.toFixed(2)}L
+                </Text>
+
+                <Text style={styles.summarySub}>
+                  Remaining
+                </Text>
+              </View>
+
+            </View>
           </View>
+          {/* PREMIUM STATS GRID SECTION */}
+          <View style={styles.gridContainer}>
+            <View style={styles.gridRow}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={[styles.statCard, { borderTopColor: '#6366f1' }]}
+                onPress={() => navigation.navigate('Farmers')}
+              >
+                <View style={[styles.statIconWrapper, { backgroundColor: '#e0e7ff' }]}>
+                  <FontAwesome name="tractor" size={16} color="#6366f1" />
+                </View>
+                <View style={styles.statContent}>
+                  <Text style={styles.statCardValue}>{firmInfo?.farmers || 0}</Text>
+                  <Text style={styles.statCardLabel}>Farmers</Text>
+                </View>
+              </TouchableOpacity>
 
-          {/* <View style={styles.gridRow}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={[styles.statCard, { borderTopColor: '#ec4899' }]}
+                onPress={() => navigation.navigate('Customers')}
+              >
+                <View style={[styles.statIconWrapper, { backgroundColor: '#fce7f3' }]}>
+                  <FontAwesome name="users" size={14} color="#ec4899" />
+                </View>
+                <View style={styles.statContent}>
+                  <Text style={styles.statCardValue}>{firmInfo?.customers || 0}</Text>
+                  <Text style={styles.statCardLabel}>Customers</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            {/* <View style={styles.gridRow}>
             <TouchableOpacity 
               activeOpacity={0.7} 
               style={[styles.statCard, { borderTopColor: '#f59e0b' }]} 
@@ -172,19 +425,15 @@ const Home = ({ navigation }) => {
               </View>
             </TouchableOpacity>
           </View> */}
-        </View>
-
-        <View style={styles.listHeader}>
-          <Text style={styles.listTitle}>Recent Entries</Text>
-          <View style={styles.entryCountBadge}>
-            <Text style={styles.entryCountText}>{allEntries.length} Items</Text>
           </View>
-        </View>
 
-        <ScrollView 
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 40 }}
-        >
+          <View style={styles.listHeader}>
+            <Text style={styles.listTitle}>Recent Entries</Text>
+            <View style={styles.entryCountBadge}>
+              <Text style={styles.entryCountText}>{allEntries.length} Items</Text>
+            </View>
+          </View>
+
           {allEntries.map((ent, i) => (
             <View key={i} style={styles.entryRow}>
               <View style={styles.dateCol}>
@@ -198,7 +447,10 @@ const Home = ({ navigation }) => {
 
               <View style={styles.nameCol}>
                 <Text style={styles.userName} numberOfLines={1}>{ent.name}</Text>
-                <Text style={styles.userCode}>Code: {ent.userCode}</Text>
+                <Text style={styles.userCode}>
+                  {ent.userCode} • {ent.userType}
+                </Text>
+
               </View>
 
               <View style={styles.dataCol}>
@@ -219,12 +471,176 @@ const Home = ({ navigation }) => {
             </View>
           ))}
         </ScrollView>
+
       </View>
+      <Modal
+        visible={saleModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          setSaleModal(false);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+
+          <View style={styles.saleModal}>
+
+            <Text style={styles.modalTitle}>
+              Dairy Sale
+            </Text>
+
+            <TextInput
+              placeholder="Customer Name (Optional)"
+              placeholderTextColor="#94a3b8"
+              value={customerName}
+              onChangeText={setCustomerName}
+              style={styles.input}
+            />
+
+            <TextInput
+              placeholder="Milk Quantity (L)"
+              keyboardType="numeric"
+              placeholderTextColor="#94a3b8"
+              value={saleWeight}
+              onChangeText={setSaleWeight}
+              style={styles.input}
+            />
+
+            <TextInput
+              placeholder="Rate ₹/L"
+              keyboardType="numeric"
+              placeholderTextColor="#94a3b8"
+              value={saleRate}
+              onChangeText={setSaleRate}
+              style={styles.input}
+            />
+
+            <View style={styles.totalBox}>
+              <Text style={styles.totalText}>
+                Total
+              </Text>
+
+              <Text style={styles.totalAmount}>
+                ₹ {totalSale.toFixed(2)}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              disabled={isLoading}
+              style={[
+                styles.saveBtn,
+                { opacity: isLoading ? 0.6 : 1 }
+              ]}
+              onPress={saveDairySale}
+            >
+              <Text style={styles.saveBtnText}>
+                Save Sale
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cancelBtn}
+              onPress={() => {
+                setSaleModal(false);
+                setCustomerName("");
+                setSaleWeight("");
+                setSaleRate("");
+              }}
+            >
+              <Text style={styles.cancelText}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+
+          </View>
+
+        </View>
+      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.35)",
+  },
+
+  saleModal: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+  },
+
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#0f172a",
+    marginBottom: 20,
+  },
+
+  input: {
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 52,
+    fontSize: 15,
+    marginBottom: 14,
+    color: "#0f172a",
+  },
+
+  totalBox: {
+    backgroundColor: "#eff6ff",
+    borderRadius: 14,
+    padding: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 4,
+  },
+
+  totalText: {
+    fontSize: 16,
+    color: "#334155",
+    fontWeight: "600",
+  },
+
+  totalAmount: {
+    fontSize: 22,
+    color: "#2563eb",
+    fontWeight: "700",
+  },
+
+  saveBtn: {
+    backgroundColor: "#2563eb",
+    marginTop: 22,
+    height: 52,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  saveBtnText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+
+  cancelBtn: {
+    marginTop: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    height: 46,
+  },
+
+  cancelText: {
+    color: "#64748b",
+    fontSize: 15,
+    fontWeight: "600",
+  },
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
@@ -245,22 +661,61 @@ const styles = StyleSheet.create({
     color: '#1e293b',
     marginTop: 2,
   },
-  summaryContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  totalCard: {
     marginTop: 20,
+    backgroundColor: "#2563eb",
+    borderRadius: 18,
+    padding: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  totalLeft: {
+    flex: 1,
+  },
+
+  totalTitle: {
+    color: "#dbeafe",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+
+  totalValue: {
+    color: "#fff",
+    fontSize: 34,
+    fontWeight: "bold",
+    marginTop: 6,
+  },
+
+  totalUnit: {
+    fontSize: 18,
+    color: "#dbeafe",
+  },
+
+  totalIcon: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  summaryContainer: {
+    flexDirection: "row",
+    marginTop: 14,
     gap: 12,
   },
   infoCard: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 16,
-    padding: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
     borderLeftWidth: 4,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -413,7 +868,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   userName: {
-    fontSize: 14,
+    fontSize: 17,
     fontWeight: '600',
     color: '#334155',
   },
@@ -433,13 +888,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   currencySymbol: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#10b981',
     fontWeight: 'bold',
     marginRight: 2,
   },
   amountValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '800',
     color: '#1e293b',
   },
@@ -474,7 +929,77 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#16a34a',
-  }
+  },
+  summaryCard: {
+    backgroundColor: "#fff",
+    marginHorizontal: 20,
+    marginBottom: 18,
+    borderRadius: 16,
+    padding: 16,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+  },
+
+  summaryTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0f172a",
+    marginBottom: 14,
+  },
+
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  summaryBox: {
+    flex: 1,
+    alignItems: "center",
+  },
+
+  summaryLabel: {
+    fontSize: 11,
+    color: "#94a3b8",
+    textTransform: "uppercase",
+  },
+
+  summaryValue: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#1e293b",
+    marginTop: 6,
+  },
+
+  summarySub: {
+    fontSize: 11,
+    color: "#64748b",
+    marginTop: 2,
+  },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  saleBtn: {
+    backgroundColor: "#2563eb",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    height: 40,
+    borderRadius: 12,
+    elevation: 4,
+  },
+
+  saleBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+    marginLeft: 6,
+    fontSize: 13,
+  },
 });
 
 export default Home;

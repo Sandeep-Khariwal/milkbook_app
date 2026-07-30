@@ -29,10 +29,26 @@ const SignupScreen = (props: { onClickLogin: () => void }) => {
   const [password, setPassword] = useState('');
   const [firmName, setFirmName] = useState('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [address, setAddress] = useState('');
 
   // ... handleSignup logic remains the same ...
   const handleSignup = async () => {
-    const data = { name, phoneNumber, password, firmName };
+    const data = { name, phoneNumber, password, firmName, address };
+    if (
+      !name.trim() ||
+      !phoneNumber.trim() ||
+      !firmName.trim() ||
+      !address.trim() ||
+      !password.trim()
+    ) {
+      Toast.show({
+        type: ALERT_TYPE.DANGER,
+        title: 'Error',
+        textBody: 'All fields are required.',
+      });
+      return;
+    }
+    
     setIsLoading(true);
     try {
       const response = await fetch(`${BASE_URL}/firm/create`, {
@@ -117,6 +133,24 @@ const SignupScreen = (props: { onClickLogin: () => void }) => {
               />
             </View>
 
+            <Text style={styles.label}>Address</Text>
+            <View style={styles.inputWrapper}>
+              <Icon
+                name="map-marker"
+                size={18}
+                color="#5086E7"
+                style={styles.icon}
+              />
+              <TextInput
+                placeholder="Enter your address"
+                style={styles.input}
+                value={address}
+                onChangeText={setAddress}
+                placeholderTextColor="#A0A0A0"
+                multiline
+              />
+            </View>
+
             <Text style={styles.label}>Password</Text>
             <View style={styles.inputWrapper}>
               <Icon name="lock" size={18} color="#5086E7" style={styles.icon} />
@@ -176,7 +210,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 40,
     // This creates the space for the card to sit nicely below the header
-    marginTop: -20, 
+    marginTop: -20,
   },
   card: {
     backgroundColor: '#FFF',
