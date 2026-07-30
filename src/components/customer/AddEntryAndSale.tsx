@@ -70,6 +70,11 @@ const AddEntryAndSale = (props: {
   const activeMilkConfig = isBuffalo ? props.customer.buffaloMilk : props.customer.cowMilk;
 
   const addEntry = async () => {
+    console.log("clickedRef.current : ",clickedRef.current);
+    
+    if(clickedRef.current){
+      return
+    }
     clickedRef.current += 1;
     if (!milkEntry.weight) {
       Toast.show({ type: ALERT_TYPE.WARNING, title: 'Warning', textBody: `Weight is required!` });
@@ -124,6 +129,7 @@ const AddEntryAndSale = (props: {
       setMilkEntry({ fat: '', clr: '', weight: '', timeZone: '', _id: '' });
       Toast.show({ type: ALERT_TYPE.SUCCESS, title: 'Success', textBody: `Milk Added` });
       props.dataUpdate();
+      clickedRef.current = 0;
     } catch (e) { console.log(e); } finally { setIsLoading(false); clickedRef.current = 0; }
   };
 

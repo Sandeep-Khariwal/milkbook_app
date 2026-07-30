@@ -153,6 +153,10 @@ const FarmerHome = ({ route }: { route: any }) => {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+      }).then((res:any)=>{
+
+      }).catch((e:any)=>{
+        console.log(e);
       });
       setShowAddPaymentModal(false);
       setCashPayment('');
@@ -268,6 +272,23 @@ const FarmerHome = ({ route }: { route: any }) => {
               </View>
             </View>
           </View>
+
+          <View style={styles.secondaryActionRow}>
+          <TouchableOpacity
+            style={styles.minBtn}
+            onPress={() => navigation.navigate('SavedBalance', { userId: customer._id, userType: 'farmer' })}
+          >
+            <Icon name="wallet-outline" size={16} color="#475569" />
+            <Text style={styles.minBtnText}>Saved Balance</Text>
+          </TouchableOpacity>
+
+          {isAdmin && (
+            <TouchableOpacity style={[styles.minBtn, styles.saveBtnActive]} onPress={handleSaveCurrentBalance}>
+              <Icon name="checkmark-circle-outline" size={16} color="#FFF" />
+              <Text style={styles.minBtnTextActive}>Save Balance</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         </View>
 
         <View style={styles.actionButtonContainer}>
@@ -294,8 +315,10 @@ const FarmerHome = ({ route }: { route: any }) => {
           )}
         </View>
 
+        
+
         {/* MINIMIZED BUTTONS CONTAINER */}
-      <View style={styles.secondaryActionRow}>
+      {/* <View style={styles.secondaryActionRow}>
         <TouchableOpacity
           style={styles.minBtn}
           onPress={() =>
@@ -318,7 +341,7 @@ const FarmerHome = ({ route }: { route: any }) => {
             <Text style={styles.minBtnTextActive}>Save Balance</Text>
           </TouchableOpacity>
         )}
-      </View>
+      </View> */}
 
         {/* VIEW SAVED BALANCES BUTTON (VISIBLE TO ALL ROLES) */}
         {/* <TouchableOpacity
@@ -729,8 +752,8 @@ const styles = StyleSheet.create({
   },
   minBtnText: { color: '#1E293B', fontWeight: '600', fontSize: 13 },
   saveBtnActive: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5',
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
   },
   minBtnTextActive: { color: '#FFF', fontWeight: '600', fontSize: 13 },
 });

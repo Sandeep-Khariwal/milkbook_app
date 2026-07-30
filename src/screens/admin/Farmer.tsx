@@ -59,6 +59,7 @@ const Farmers = () => {
   const [bottomSheetIndex, setBottomSheetIndex] = useState<boolean>(false);
   const [bottomSheetDeleteIndex, setBottomSheetDeleteIndex] =
     useState<boolean>(false);
+  const isAdmin = firm.role === 'admin';
 
   const [selectedFarmer, setSelectedFarmer] = useState<Farmer>(null);
 
@@ -131,9 +132,9 @@ const Farmers = () => {
       firmId: firm.id,
     };
 
-    console.log("payload : ",payload);
+    console.log('payload : ', payload);
     // return
-    
+
     await fetch(`${BASE_URL}/user/create`, {
       method: 'POST',
       headers: {
@@ -143,8 +144,8 @@ const Farmers = () => {
     })
       .then(async (res: any) => {
         const { user, status } = await res.json();
-        console.log("user : ",user);
-        
+        console.log('user : ', user);
+
         if (status === 401) {
           setIsLoading(false);
 
@@ -173,9 +174,9 @@ const Farmers = () => {
         getFarmers();
       })
       .catch((e: any) => {
-        const {message} = e.response.message
-        console.log("message : ",message);
-        
+        const { message } = e.response.message;
+        console.log('message : ', message);
+
         console.log(e);
       });
 
@@ -297,6 +298,8 @@ const Farmers = () => {
                     )}
                   </View>
                 </View>
+                {
+                  isAdmin &&
                 <View style={styles.cardTwo}>
                   <Icon
                     name="edit"
@@ -320,6 +323,7 @@ const Farmers = () => {
                     }}
                   />
                 </View>
+                }
               </TouchableOpacity>
             ))
           ) : (
@@ -339,43 +343,45 @@ const Farmers = () => {
         </View>
       </ScrollView>
 
-      <View style={styles.ButtonBox}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => {
-            setIsEditFarmer(false),
-              setFarmer({
-                name: '',
-                phoneNumber: '',
-                password: '',
-                buffaloRate: '',
-                cowRate: '',
-                userCode: '',
-                cowMilk: {
-                  activeCowMilk: false,
-                  fixedAmount: false,
-                  fatAmount: false,
-                  snfAmount: false,
-                  morningTimeMilk: false,
-                  eveningTimeMilk: false,
-                },
-                buffaloMilk: {
-                  activeBuffaloMilk: false,
-                  fixedAmount: false,
-                  fatAmount: false,
-                  snfAmount: false,
-                  morningTimeMilk: false,
-                  eveningTimeMilk: false,
-                },
-                _id: '',
-              });
-            setSelectedFarmer(null);
-            setBottomSheetIndex(true);
-          }}
-        >
-          <Text style={styles.text}>Create Farmer</Text>
-        </TouchableOpacity>
-      </View>
+      {isAdmin && (
+        <View style={styles.ButtonBox}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => {
+              setIsEditFarmer(false),
+                setFarmer({
+                  name: '',
+                  phoneNumber: '',
+                  password: '',
+                  buffaloRate: '',
+                  cowRate: '',
+                  userCode: '',
+                  cowMilk: {
+                    activeCowMilk: false,
+                    fixedAmount: false,
+                    fatAmount: false,
+                    snfAmount: false,
+                    morningTimeMilk: false,
+                    eveningTimeMilk: false,
+                  },
+                  buffaloMilk: {
+                    activeBuffaloMilk: false,
+                    fixedAmount: false,
+                    fatAmount: false,
+                    snfAmount: false,
+                    morningTimeMilk: false,
+                    eveningTimeMilk: false,
+                  },
+                  _id: '',
+                });
+              setSelectedFarmer(null);
+              setBottomSheetIndex(true);
+            }}
+          >
+            <Text style={styles.text}>Create Farmer</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <Modal
         animationType="fade"
         transparent={true}
