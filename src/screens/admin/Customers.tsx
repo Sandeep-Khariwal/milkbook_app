@@ -19,14 +19,15 @@ import { ALERT_TYPE, Toast } from 'react-native-alert-notification';
 import LoadingOverlay from '../../HelperFunction/LoadingOverlay';
 import BouncyCheckbox from 'react-native-bouncy-checkbox';
 import { Farmer } from '../../interface';
-import { setAdminDetails } from '../../../redux/slices/adminSlice';
-import { setFirmDetails } from '../../../redux/slices/firmSlice';
 
 const Customers = () => {
   const navigation = useNavigation<any>();
   const isFocused = useIsFocused();
   const [query, setQuery] = useState<string>('');
   const firm = useSelector((state: any) => state.firm.value);
+
+  const isAdmin = firm.role === "admin"
+  
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [customer, setCustomer] = useState<Farmer>({
@@ -363,6 +364,8 @@ const Customers = () => {
                     )}
                   </View>
                 </View>
+                {
+                  isAdmin &&
                 <View style={styles.cardTwo}>
                   <Icon
                     name="edit"
@@ -386,6 +389,7 @@ const Customers = () => {
                     }}
                   />
                 </View>
+                }
               </TouchableOpacity>
             ))
           ) : (
@@ -404,7 +408,8 @@ const Customers = () => {
           )}
         </View>
       </ScrollView>
-
+  {
+    isAdmin && 
       <View style={styles.ButtonBox}>
         <TouchableOpacity
           style={styles.button}
@@ -449,6 +454,7 @@ const Customers = () => {
           <Text style={styles.text}>Create Customer</Text>
         </TouchableOpacity>
       </View>
+  }
       <Modal
         animationType="fade"
         transparent={true}
