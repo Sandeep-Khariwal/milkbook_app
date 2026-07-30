@@ -106,7 +106,7 @@ const CustomerHome = ({ route }: { route: any }) => {
   };
 
   const SeeHistory = () => {
-    navigation.navigate('savedBalance', {
+    navigation.navigate('History', {
       customerId: customer._id,
       userType: 'customer',
     });
@@ -233,63 +233,75 @@ const CustomerHome = ({ route }: { route: any }) => {
           </View>
         </View>
 
-        <View style={styles.statsCard}>
-          <Text style={styles.statsLabel}>CURRENT BALANCE</Text>
-          <View style={styles.balanceRow}>
-            <FaIcon
-              name="rupee"
-              size={28}
-              color={earnings < 0 ? '#ef4444' : '#10b981'}
-            />
-            <Text
-              style={[
-                styles.balanceAmount,
-                { color: earnings < 0 ? '#ef4444' : '#10b981' },
-              ]}
-            >
-              {earnings?.toFixed(2) ?? 0}
-            </Text>
-          </View>
-          <View style={styles.divider} />
+<View style={styles.statsCard}>
+  <Text style={styles.statsLabel}>CURRENT BALANCE</Text>
+  <View style={styles.balanceRow}>
+    <FaIcon
+      name="rupee"
+      size={28}
+      color={earnings < 0 ? '#ef4444' : '#10b981'}
+    />
+    <Text
+      style={[
+        styles.balanceAmount,
+        { color: earnings < 0 ? '#ef4444' : '#10b981' },
+      ]}
+    >
+      {earnings?.toFixed(2) ?? 0}
+    </Text>
+  </View>
+  
+  <View style={styles.divider} />
 
-          <View style={styles.weightStatsContainer}>
-            <View style={styles.weightBox}>
-              <Text style={styles.weightLabel}>Buffalo Milk</Text>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Wt:</Text>
-                <Text style={styles.weightValue}>
-                  {parseFloat(totalBufallowWeight?.toFixed(1))}{' '}
-                  <Text style={styles.unit}>Kg</Text>
-                </Text>
-              </View>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Amt:</Text>
-                <Text style={styles.amountValue}>
-                  ₹{totalBuffaloAmount.toFixed(2)}
-                </Text>
-              </View>
-            </View>
+  <View style={styles.weightStatsContainer}>
+    <View style={styles.weightBox}>
+      <Text style={styles.weightLabel}>Buffalo Milk</Text>
+      <View style={styles.metaRow}>
+        <Text style={styles.metaLabel}>Wt:</Text>
+        <Text style={styles.weightValue}>{parseFloat(totalBufallowWeight?.toFixed(1))} <Text style={styles.unit}>Kg</Text></Text>
+      </View>
+      <View style={styles.metaRow}>
+        <Text style={styles.metaLabel}>Amt:</Text>
+        <Text style={styles.amountValue}>₹{totalBuffaloAmount.toFixed(2)}</Text>
+      </View>
+    </View>
 
-            <View style={styles.verticalDivider} />
+    <View style={styles.verticalDivider} />
 
-            <View style={styles.weightBox}>
-              <Text style={styles.weightLabel}>Cow Milk</Text>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Wt:</Text>
-                <Text style={styles.weightValue}>
-                  {parseFloat(totalCowWeight?.toFixed(1))}{' '}
-                  <Text style={styles.unit}>Kg</Text>
-                </Text>
-              </View>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Amt:</Text>
-                <Text style={styles.amountValue}>
-                  ₹{totalCowAmount.toFixed(2)}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
+    <View style={styles.weightBox}>
+      <Text style={styles.weightLabel}>Cow Milk</Text>
+      <View style={styles.metaRow}>
+        <Text style={styles.metaLabel}>Wt:</Text>
+        <Text style={styles.weightValue}>{parseFloat(totalCowWeight?.toFixed(1))} <Text style={styles.unit}>Kg</Text></Text>
+      </View>
+      <View style={styles.metaRow}>
+        <Text style={styles.metaLabel}>Amt:</Text>
+        <Text style={styles.amountValue}>₹{totalCowAmount.toFixed(2)}</Text>
+      </View>
+    </View>
+  </View>
+
+  {/* INTEGRATED ACTION BUTTONS */}
+  <View style={styles.integratedActionRow}>
+    <TouchableOpacity
+      style={styles.minBtn}
+      onPress={() => navigation.navigate('SavedBalance', { userId: customer._id, userType: 'farmer' })}
+    >
+      <Icon name="wallet-outline" size={16} color="#475569" />
+      <Text style={styles.minBtnText}>Saved</Text>
+    </TouchableOpacity>
+
+    {isAdmin && (
+      <TouchableOpacity
+        style={[styles.minBtn, styles.saveBtnActive]}
+        onPress={handleSaveCurrentBalance}
+      >
+        <Icon name="checkmark-circle-outline" size={16} color="#FFF" />
+        <Text style={styles.minBtnTextActive}>Save</Text>
+      </TouchableOpacity>
+    )}
+  </View>
+</View>
 
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.secondaryBtn} onPress={SeeHistory}>
@@ -308,30 +320,30 @@ const CustomerHome = ({ route }: { route: any }) => {
           )}
         </View>
 
-<View style={styles.secondaryActionRow}>
-        <TouchableOpacity
-          style={styles.minBtn}
-          onPress={() =>
-            navigation.navigate('SavedBalance', {
-              userId: customer._id,
-              userType: 'farmer',
-            })
-          }
-        >
-          <Icon name="wallet-outline" size={18} color="#1E293B" />
-          <Text style={styles.minBtnText}>Saved Balance</Text>
-        </TouchableOpacity>
-
-        {isAdmin && (
+        {/* <View style={styles.secondaryActionRow}>
           <TouchableOpacity
-            style={[styles.minBtn, styles.saveBtnActive]}
-            onPress={handleSaveCurrentBalance}
+            style={styles.minBtn}
+            onPress={() =>
+              navigation.navigate('SavedBalance', {
+                userId: customer._id,
+                userType: 'farmer',
+              })
+            }
           >
-            <Icon name="checkmark-circle-outline" size={18} color="#FFF" />
-            <Text style={styles.minBtnTextActive}>Save Balance</Text>
+            <Icon name="wallet-outline" size={18} color="#1E293B" />
+            <Text style={styles.minBtnText}>Saved Balance</Text>
           </TouchableOpacity>
-        )}
-      </View>
+
+          {isAdmin && (
+            <TouchableOpacity
+              style={[styles.minBtn, styles.saveBtnActive]}
+              onPress={handleSaveCurrentBalance}
+            >
+              <Icon name="checkmark-circle-outline" size={18} color="#FFF" />
+              <Text style={styles.minBtnTextActive}>Save Balance</Text>
+            </TouchableOpacity>
+          )}
+        </View> */}
 
         {/* VIEW SAVED BALANCES BUTTON (VISIBLE TO ALL ROLES) */}
         {/* <TouchableOpacity
@@ -744,7 +756,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-   secondaryActionRow: {
+  secondaryActionRow: {
     flexDirection: 'row',
     marginHorizontal: 18,
     marginTop: 12,
@@ -752,22 +764,22 @@ const styles = StyleSheet.create({
   },
   minBtn: {
     flex: 1,
-    backgroundColor: '#FFF',
-    paddingVertical: 12,
-    borderRadius: 12,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 10,
+    borderRadius: 12,
     gap: 6,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
   },
-  minBtnText: { color: '#1E293B', fontWeight: '600', fontSize: 13 },
-  saveBtnActive: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5',
-  },
+  minBtnText: { color: '#475569', fontWeight: '600', fontSize: 13 },
+  saveBtnActive: { backgroundColor: '#334155' },
   minBtnTextActive: { color: '#FFF', fontWeight: '600', fontSize: 13 },
+  integratedActionRow: {
+    flexDirection: 'row',
+    marginTop: 20,
+    gap: 12,
+  }
 });
 
 export default CustomerHome;
