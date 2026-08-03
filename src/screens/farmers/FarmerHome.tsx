@@ -153,9 +153,9 @@ const FarmerHome = ({ route }: { route: any }) => {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-      }).then((res:any)=>{
+      }).then((res: any) => {
 
-      }).catch((e:any)=>{
+      }).catch((e: any) => {
         console.log(e);
       });
       setShowAddPaymentModal(false);
@@ -274,21 +274,21 @@ const FarmerHome = ({ route }: { route: any }) => {
           </View>
 
           <View style={styles.secondaryActionRow}>
-          <TouchableOpacity
-            style={styles.minBtn}
-            onPress={() => navigation.navigate('SavedBalance', { userId: customer._id, userType: 'farmer' })}
-          >
-            <Icon name="wallet-outline" size={16} color="#475569" />
-            <Text style={styles.minBtnText}>Saved Balance</Text>
-          </TouchableOpacity>
-
-          {isAdmin && (
-            <TouchableOpacity style={[styles.minBtn, styles.saveBtnActive]} onPress={handleSaveCurrentBalance}>
-              <Icon name="checkmark-circle-outline" size={16} color="#FFF" />
-              <Text style={styles.minBtnTextActive}>Save Balance</Text>
+            <TouchableOpacity
+              style={styles.minBtn}
+              onPress={() => navigation.navigate('SavedBalance', { userId: customer._id, userType: 'farmer' })}
+            >
+              <Icon name="wallet-outline" size={16} color="#475569" />
+              <Text style={styles.minBtnText}>Saved Balance</Text>
             </TouchableOpacity>
-          )}
-        </View>
+
+            {isAdmin && (
+              <TouchableOpacity style={[styles.minBtn, styles.saveBtnActive]} onPress={handleSaveCurrentBalance}>
+                <Icon name="checkmark-circle-outline" size={16} color="#FFF" />
+                <Text style={styles.minBtnTextActive}>Save Balance</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         <View style={styles.actionButtonContainer}>
@@ -315,10 +315,10 @@ const FarmerHome = ({ route }: { route: any }) => {
           )}
         </View>
 
-        
+
 
         {/* MINIMIZED BUTTONS CONTAINER */}
-      {/* <View style={styles.secondaryActionRow}>
+        {/* <View style={styles.secondaryActionRow}>
         <TouchableOpacity
           style={styles.minBtn}
           onPress={() =>
@@ -377,7 +377,7 @@ const FarmerHome = ({ route }: { route: any }) => {
               setScrollNow(true);
             }}
           />
-        )} 
+        )}
 
         <View onLayout={event => setTablePosition(event.nativeEvent.layout.y)}>
           <EntriesTable
@@ -667,6 +667,48 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+  },
+  summaryCard: {
+    marginHorizontal: 18,
+    marginTop: 16,
+    marginBottom: 25,
+    backgroundColor: '#FFF',
+    borderRadius: 18,
+    padding: 18,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    elevation: 3,
+  },
+
+  summaryTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+
+  summarySubtitle: {
+    marginTop: 4,
+    fontSize: 13,
+    color: '#64748B',
+  },
+
+  summaryAmountBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+
+  summaryAmount: {
+    marginLeft: 6,
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#2563EB',
   },
   modalHeaderTitle: { fontSize: 22, fontWeight: '800', color: '#0F172A' },
   modalInputWrapper: { marginBottom: 15 },

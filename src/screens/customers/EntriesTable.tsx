@@ -44,10 +44,17 @@ const EntriesTable = (props: {
 
   const [isLoading, setIsLoading] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
-  const [fromDate, setFromDate] = useState<Date | null>(null);
-  const [toDate, setToDate] = useState<Date | null>(null);
-  const [openFromDate, setOpenFromDate] = useState(false);
-  const [openToDate, setOpenToDate] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
+
+  const [fromDate, setFromDate] = useState<Date>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+
+  const [toDate, setToDate] = useState<Date>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  });
   const [isBuffalo, setIsBuffalo] = useState<boolean>(true);
   const [date, setDate] = useState<Date>(new Date());
   const [open, setOpen] = useState<boolean>(false);
@@ -56,6 +63,8 @@ const EntriesTable = (props: {
   // Additional states for rendering local filtered separate amounts
   const [buffaloAmount, setBuffaloAmount] = useState<number>(0);
   const [cowAmount, setCowAmount] = useState<number>(0);
+  const [monthlyTotalAmount, setMonthlyTotalAmount] = useState(0);
+  const [purchaseAmount, setPurchaseAmount] = useState(0);
   const [buffaloWeight, setBuffaloWeight] = useState<number>(0);
   const [cowWeight, setCowWeight] = useState<number>(0);
 
@@ -87,8 +96,52 @@ const EntriesTable = (props: {
   useEffect(() => {
     if (props.userId) {
       getAllEntries(props.userId);
+      getMonthlyPurchaseSummary();
     }
-  }, [props.userId]);
+  }, [props.userId, fromDate, toDate]);
+
+
+  const currentMonth = new Date();
+
+  const isCurrentMonth =
+    selectedMonth.getMonth() === currentMonth.getMonth() &&
+    selectedMonth.getFullYear() === currentMonth.getFullYear();
+
+
+  const changeMonth = (direction: 'prev' | 'next') => {
+    if (direction === 'next' && isCurrentMonth) {
+      return;
+    }
+
+    const newMonth = new Date(selectedMonth);
+
+    if (direction === 'prev') {
+      newMonth.setMonth(newMonth.getMonth() - 1);
+    } else {
+      newMonth.setMonth(newMonth.getMonth() + 1);
+    }
+
+    setSelectedMonth(newMonth);
+
+    const start = new Date(
+      newMonth.getFullYear(),
+      newMonth.getMonth(),
+      1,
+    );
+
+    const end = new Date(
+      newMonth.getFullYear(),
+      newMonth.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
+
+    setFromDate(start);
+    setToDate(end);
+  };
 
   const getAllEntries = async (id: string) => {
     setIsLoading(true);
@@ -132,6 +185,8 @@ const EntriesTable = (props: {
           0,
         );
 
+        setMonthlyTotalAmount(totalAmount);
+
         if (props.findTotalWeight) {
           props.findTotalWeight(
             totalWeight,
@@ -150,12 +205,33 @@ const EntriesTable = (props: {
         setCowWeight(0);
         setBuffaloAmount(0);
         setCowAmount(0);
+        setMonthlyTotalAmount(0);
       }
       setAllEntries(data || []);
     } catch (e) {
       console.log(e);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const getMonthlyPurchaseSummary = async () => {
+    try {
+      const query = new URLSearchParams({
+        fromDate: fromDate.toISOString(),
+        toDate: toDate.toISOString(),
+      }).toString();
+
+      const res = await fetch(
+        `${BASE_URL}/history/user/monthly-summary/${props.userId}?${query}`,
+      );
+
+      const data = await res.json();
+
+      setPurchaseAmount(data.purchaseAmount || 0);
+    } catch (e) {
+      console.log(e);
+      setPurchaseAmount(0);
     }
   };
 
@@ -241,31 +317,31 @@ const EntriesTable = (props: {
       </View>,
       ...(firm.role === 'admin'
         ? [
-            <TouchableOpacity
-              disabled={!isEditable}
-              onPress={() => {
-                const editEntry = {
-                  _id: ent._id,
-                  fat: String(ent.fat),
-                  weight: String(ent.weight),
-                  timeZone: ent.timeZone,
-                  date: ent.date
-                };
-                setIsBuffalo(ent.isBuffalo);
-                setMilkEntry(editEntry);
-                setDate(new Date(editEntry.date));
-                setOpenEditModal(true);
-              }}
-              style={!isEditable && styles.disabledTouch}
-            >
-              <FeIcon
-                name="edit-3"
-                size={18}
-                color={isEditable ? "#5086E7" : "#CBD5E1"}
-                style={{ alignSelf: 'center' }}
-              />
-            </TouchableOpacity>,
-          ]
+          <TouchableOpacity
+            disabled={!isEditable}
+            onPress={() => {
+              const editEntry = {
+                _id: ent._id,
+                fat: String(ent.fat),
+                weight: String(ent.weight),
+                timeZone: ent.timeZone,
+                date: ent.date
+              };
+              setIsBuffalo(ent.isBuffalo);
+              setMilkEntry(editEntry);
+              setDate(new Date(editEntry.date));
+              setOpenEditModal(true);
+            }}
+            style={!isEditable && styles.disabledTouch}
+          >
+            <FeIcon
+              name="edit-3"
+              size={18}
+              color={isEditable ? "#5086E7" : "#CBD5E1"}
+              style={{ alignSelf: 'center' }}
+            />
+          </TouchableOpacity>,
+        ]
         : []),
     ];
   });
@@ -276,49 +352,36 @@ const EntriesTable = (props: {
     <View style={styles.container}>
       {/* FILTER SECTION */}
       <View style={styles.filterCard}>
-        <View style={styles.filterRow}>
+        <View style={styles.monthRow}>
           <TouchableOpacity
-            style={styles.filterInput}
-            onPress={() => {
-              setOpenFromDate(true);
-              setFromDate(new Date());
-            }}
+            style={styles.monthBtn}
+            onPress={() => changeMonth('prev')}
           >
-            <FeIcon name="calendar" size={14} color="#666" />
-            <Text style={styles.filterText}>
-              {fromDate ? formatDate(fromDate) : 'From'}
+            <FeIcon name="chevron-left" size={22} color="#FFF" />
+          </TouchableOpacity>
+
+          <View style={styles.monthCard}>
+            <Text style={styles.monthText}>
+              {`${fromDate.getDate()} - ${toDate.getDate()} ${toDate.toLocaleString(
+                'default',
+                { month: 'short' },
+              )}`}
             </Text>
-          </TouchableOpacity>
+          </View>
 
           <TouchableOpacity
-            style={styles.filterInput}
-            onPress={() => {
-              setOpenToDate(true);
-              setToDate(new Date());
-            }}
+            disabled={isCurrentMonth}
+            style={[
+              styles.monthBtn,
+              isCurrentMonth && styles.monthBtnDisabled,
+            ]}
+            onPress={() => changeMonth('next')}
           >
-            <FeIcon name="calendar" size={14} color="#666" />
-            <Text style={styles.filterText}>
-              {toDate ? formatDate(toDate) : 'To'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.searchBtn}
-            onPress={() => getAllEntries(props.userId)}
-          >
-            <FaIcon name="search" size={20} color="#fff" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.clearBtn}
-            onPress={() => {
-              setFromDate(null);
-              setToDate(null);
-              getAllEntries(props.userId);
-            }}
-          >
-            <FeIcon name="refresh-cw" size={20} color="#5086E7" />
+            <FeIcon
+              name="chevron-right"
+              size={22}
+              color={isCurrentMonth ? '#94A3B8' : '#FFF'}
+            />
           </TouchableOpacity>
         </View>
 
@@ -355,19 +418,77 @@ const EntriesTable = (props: {
         </Table>
       </View>
 
-      {/* DATE MODALS */}
-      <DatePickerModal
-        visible={openFromDate}
-        date={fromDate ?? new Date()}
-        onDateChange={setFromDate}
-        onClose={() => setOpenFromDate(false)}
-      />
-      <DatePickerModal
-        visible={openToDate}
-        date={toDate ?? new Date()}
-        onDateChange={setToDate}
-        onClose={() => setOpenToDate(false)}
-      />
+      {props.userType === 'farmer' && (
+        <View style={styles.monthSummaryCard}>
+          <Text style={styles.monthSummaryTitle}>
+            Monthly Entries Total
+          </Text>
+
+          <Text style={styles.monthSummaryDate}>
+            {fromDate.toLocaleString("default", { month: "long" })}{" "}
+            {fromDate.getFullYear()}
+          </Text>
+
+          <View style={{ marginTop: 12 }}>
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: 8,
+              }}>
+              <Text>Milk Amount</Text>
+              <Text style={{ fontWeight: "700", color: "#16A34A" }}>
+                ₹{monthlyTotalAmount.toFixed(2)}
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: 8,
+              }}>
+              <Text>Purchased Stock</Text>
+              <Text style={{ fontWeight: "700", color: "#DC2626" }}>
+                -₹{purchaseAmount.toFixed(2)}
+              </Text>
+            </View>
+
+            <View
+              style={{
+                height: 1,
+                backgroundColor: "#E5E7EB",
+                marginVertical: 8,
+              }}
+            />
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}>
+              <Text
+                style={{
+                  fontSize: 17,
+                  fontWeight: "700",
+                }}>
+                Remaining
+              </Text>
+
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontWeight: "800",
+                  color: "#2563EB",
+                }}>
+                ₹{(monthlyTotalAmount - purchaseAmount).toFixed(2)}
+              </Text>
+            </View>
+
+          </View>
+        </View>
+      )}
 
       {/* EDIT MODAL */}
       <Modal visible={openEditModal} transparent animationType="slide">
@@ -587,6 +708,45 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  monthBtnDisabled: {
+    backgroundColor: '#E2E8F0',
+  },
+  monthSummaryCard: {
+    marginHorizontal: 16,
+    marginTop: 14,
+    marginBottom: 20,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 18,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+
+  monthSummaryTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+
+  monthSummaryDate: {
+    marginTop: 4,
+    color: "#64748B",
+    fontSize: 13,
+  },
+
+  monthSummaryAmountRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 14,
+  },
+
+  monthSummaryAmount: {
+    marginLeft: 8,
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#16A34A",
+  },
   modalView: {
     width: '90%',
     backgroundColor: '#fff',
@@ -675,6 +835,36 @@ const styles = StyleSheet.create({
   doneActionText: { color: '#fff', textAlign: 'center', fontWeight: 'bold' },
   disabledTouch: {
     opacity: 0.6,
+  },
+  monthRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  monthBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#2563EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  monthCard: {
+    flex: 1,
+    marginHorizontal: 12,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  monthText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A',
   },
 });
 

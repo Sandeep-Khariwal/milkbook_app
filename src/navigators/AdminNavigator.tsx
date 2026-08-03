@@ -38,6 +38,7 @@ import ShowHistory from '../screens/commonScreen/ShowHistory';
 import ShowAllHistory from '../screens/commonScreen/AllHistory';
 import { createStackNavigator } from '@react-navigation/stack';
 import ShowSavedBalance from '../screens/commonScreen/ShowSavedBalance';
+import DairySales from "../screens/admin/DairySales";
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -78,7 +79,7 @@ function CustomDrawerContent(props: any) {
         onPress={() => props.navigation.navigate(route)}
       >
         <View style={[styles.iconContainer, isActive && styles.activeIconContainer]}>
-          {iconType === 'Ionicons' ? 
+          {iconType === 'Ionicons' ?
             <Icon name={icon} size={20} color={isActive ? '#fff' : '#64748b'} /> :
             <AntDIcon name={icon} size={20} color={isActive ? '#fff' : '#64748b'} />
           }
@@ -92,7 +93,7 @@ function CustomDrawerContent(props: any) {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <StatusBar barStyle="dark-content" />
       {isLoading && <LoadingOverlay visible />}
-      
+
       {/* Header Profile Section - Improved Spacing */}
       <View style={styles.profileHeader}>
         <View style={styles.avatarSection}>
@@ -126,7 +127,7 @@ function CustomDrawerContent(props: any) {
           <NavItem label="Subscription Plans" icon="card-outline" route="Plans" />
           <NavItem label="Archived Users" icon="trash-outline" route="Deletedusers" />
           {(firm.id === 'FIRM-4cb29350-6863-4ad7-bb17-d1f885ba34c7' || firm.id === "FIRM-8bab3f1a-c031-42df-b836-91ed29e6d743") && (
-             <NavItem label="Dairy Network" icon="globe-outline" route="business" />
+            <NavItem label="Dairy Network" icon="globe-outline" route="business" />
           )}
         </View>
       </DrawerContentScrollView>
@@ -181,7 +182,7 @@ const AdminDrawer = () => {
 
   return (
     <Drawer.Navigator
-      id="admin-drawer" 
+      id="admin-drawer"
       initialRouteName={initialScreen}
       drawerContent={props => <CustomDrawerContent {...props} />}
       screenOptions={{
@@ -213,6 +214,10 @@ export default function AdminNavigator() {
       <Stack.Screen name="History" component={ShowHistory} />
       <Stack.Screen name="AllHistory" component={ShowAllHistory} />
       <Stack.Screen name="SavedBalance" component={ShowSavedBalance} />
+      <Stack.Screen
+        name="DairySales"
+        component={DairySales}
+      />
     </Stack.Navigator>
   );
 }
@@ -222,8 +227,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#5086E7',
     padding: 20,
     // Adjusted padding and margin for safe areas
-    paddingTop: Platform.OS === 'ios' ? 20 : 40, 
-    marginTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0, 
+    paddingTop: Platform.OS === 'ios' ? 20 : 40,
+    marginTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -278,16 +283,16 @@ const styles = StyleSheet.create({
   navLabel: { fontSize: 15, color: '#475569', marginLeft: 12, fontWeight: '600' },
   activeNavLabel: { color: '#1e293b', fontWeight: '700' },
   divider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 10, marginHorizontal: 25 },
-  
-  drawerFooter: { 
-    padding: 20, 
+
+  drawerFooter: {
+    padding: 20,
     // Increased padding bottom to move button up away from phone buttons
-    paddingBottom: Platform.OS === 'ios' ? 40 : 30, 
-    borderTopWidth: 1, 
-    borderTopColor: '#f1f5f9' 
+    paddingBottom: Platform.OS === 'ios' ? 40 : 30,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9'
   },
   versionText: { textAlign: 'center', fontSize: 10, color: '#cbd5e1', marginTop: 10 },
-  
+
   centeredView: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   modalView: { width: '90%', backgroundColor: '#fff', borderRadius: 20, padding: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 5 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },

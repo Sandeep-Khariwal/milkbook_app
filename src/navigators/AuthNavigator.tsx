@@ -30,6 +30,7 @@ export default function AuthNavigator() {
   const [password, setPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showLogin, setShowLogin] = useState<boolean>(true);
+  const [showPassword, setShowPassword] = useState(false);
 
   const Login = async () => {
     setIsLoading(true);
@@ -80,18 +81,18 @@ export default function AuthNavigator() {
         <View style={styles.container}>
           <View style={styles.headerBackground}>
             <View style={styles.logoCircle}>
-              <Image 
-                source={require('../assets/logo1.png')} 
-                style={styles.logo} 
-                resizeMode="contain" 
+              <Image
+                source={require('../assets/logo1.png')}
+                style={styles.logo}
+                resizeMode="contain"
               />
             </View>
             <Text style={styles.welcomeText}>Welcome Back</Text>
             <Text style={styles.subText}>Sign in to continue your business</Text>
           </View>
 
-          <KeyboardAvoidingView 
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.content}
           >
             <View style={styles.card}>
@@ -109,9 +110,15 @@ export default function AuthNavigator() {
               </View>
 
               <View style={styles.inputContainer}>
-                <Icon name="lock" size={20} color="#5086E7" style={styles.inputIcon} />
+                <Icon
+                  name="lock"
+                  size={20}
+                  color="#5086E7"
+                  style={styles.inputIcon}
+                />
+
                 <TextInput
-                  secureTextEntry
+                  secureTextEntry={!showPassword}
                   maxLength={40}
                   onChangeText={setPassword}
                   value={password}
@@ -119,6 +126,17 @@ export default function AuthNavigator() {
                   placeholder="Password"
                   placeholderTextColor="#999"
                 />
+
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  activeOpacity={0.7}
+                >
+                  <Icon
+                    name={showPassword ? 'eye-slash' : 'eye'}
+                    size={20}
+                    color="#777"
+                  />
+                </TouchableOpacity>
               </View>
 
               <TouchableOpacity style={styles.loginButton} onPress={Login}>
@@ -207,6 +225,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     height: 55,
   },
+
   inputIcon: {
     marginRight: 10,
     width: 25,

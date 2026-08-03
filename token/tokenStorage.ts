@@ -3,6 +3,7 @@ export const BASE_URL = "http://72.61.251.156:9000/api/v1" // hostinger Live url
 // export const BASE_URL = "http://192.168.0.105:9000/api/v1" // pg url
 // export const BASE_URL = "http://192.168.31.151:9000/api/v1" // home wifi
 // export const BASE_URL = "https://erp-backend-p5nc.onrender.com/api/v1" // onredner
+// export const BASE_URL = "http://192.168.218.90:9000/api/v1"   //Guri 
 
 export async function saveToken(token: string) {
   try {
