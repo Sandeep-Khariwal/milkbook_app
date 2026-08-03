@@ -63,6 +63,8 @@ const EntriesTable = (props: {
   // Additional states for rendering local filtered separate amounts
   const [buffaloAmount, setBuffaloAmount] = useState<number>(0);
   const [cowAmount, setCowAmount] = useState<number>(0);
+  const [monthlyTotalAmount, setMonthlyTotalAmount] = useState(0);
+  const [purchaseAmount, setPurchaseAmount] = useState(0);
   const [buffaloWeight, setBuffaloWeight] = useState<number>(0);
   const [cowWeight, setCowWeight] = useState<number>(0);
 
@@ -94,6 +96,7 @@ const EntriesTable = (props: {
   useEffect(() => {
     if (props.userId) {
       getAllEntries(props.userId);
+      getMonthlyPurchaseSummary();
     }
   }, [props.userId, fromDate, toDate]);
 
@@ -182,6 +185,8 @@ const EntriesTable = (props: {
           0,
         );
 
+        setMonthlyTotalAmount(totalAmount);
+
         if (props.findTotalWeight) {
           props.findTotalWeight(
             totalWeight,
@@ -200,12 +205,33 @@ const EntriesTable = (props: {
         setCowWeight(0);
         setBuffaloAmount(0);
         setCowAmount(0);
+        setMonthlyTotalAmount(0);
       }
       setAllEntries(data || []);
     } catch (e) {
       console.log(e);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const getMonthlyPurchaseSummary = async () => {
+    try {
+      const query = new URLSearchParams({
+        fromDate: fromDate.toISOString(),
+        toDate: toDate.toISOString(),
+      }).toString();
+
+      const res = await fetch(
+        `${BASE_URL}/history/user/monthly-summary/${props.userId}?${query}`,
+      );
+
+      const data = await res.json();
+
+      setPurchaseAmount(data.purchaseAmount || 0);
+    } catch (e) {
+      console.log(e);
+      setPurchaseAmount(0);
     }
   };
 
@@ -391,6 +417,78 @@ const EntriesTable = (props: {
           />
         </Table>
       </View>
+
+      {props.userType === 'farmer' && (
+        <View style={styles.monthSummaryCard}>
+          <Text style={styles.monthSummaryTitle}>
+            Monthly Entries Total
+          </Text>
+
+          <Text style={styles.monthSummaryDate}>
+            {fromDate.toLocaleString("default", { month: "long" })}{" "}
+            {fromDate.getFullYear()}
+          </Text>
+
+          <View style={{ marginTop: 12 }}>
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: 8,
+              }}>
+              <Text>Milk Amount</Text>
+              <Text style={{ fontWeight: "700", color: "#16A34A" }}>
+                ₹{monthlyTotalAmount.toFixed(2)}
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: 8,
+              }}>
+              <Text>Purchased Stock</Text>
+              <Text style={{ fontWeight: "700", color: "#DC2626" }}>
+                -₹{purchaseAmount.toFixed(2)}
+              </Text>
+            </View>
+
+            <View
+              style={{
+                height: 1,
+                backgroundColor: "#E5E7EB",
+                marginVertical: 8,
+              }}
+            />
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}>
+              <Text
+                style={{
+                  fontSize: 17,
+                  fontWeight: "700",
+                }}>
+                Remaining
+              </Text>
+
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontWeight: "800",
+                  color: "#2563EB",
+                }}>
+                ₹{(monthlyTotalAmount - purchaseAmount).toFixed(2)}
+              </Text>
+            </View>
+
+          </View>
+        </View>
+      )}
 
       {/* EDIT MODAL */}
       <Modal visible={openEditModal} transparent animationType="slide">
@@ -612,6 +710,42 @@ const styles = StyleSheet.create({
   },
   monthBtnDisabled: {
     backgroundColor: '#E2E8F0',
+  },
+  monthSummaryCard: {
+    marginHorizontal: 16,
+    marginTop: 14,
+    marginBottom: 20,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 18,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+
+  monthSummaryTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+
+  monthSummaryDate: {
+    marginTop: 4,
+    color: "#64748B",
+    fontSize: 13,
+  },
+
+  monthSummaryAmountRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 14,
+  },
+
+  monthSummaryAmount: {
+    marginLeft: 8,
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#16A34A",
   },
   modalView: {
     width: '90%',

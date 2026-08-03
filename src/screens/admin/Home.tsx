@@ -78,25 +78,36 @@ const Home = ({ navigation }) => {
         setFirmInfo(firmInfo);
       }
 
-
+      let fatMilk = 0;
       let farmerMilk = 0;
       let customerMilk = 0;
       let farmerCream = 0;
       let customerAmountTotal = 0;
 
       data.forEach((ent: any) => {
+
         if (ent.customer.userType === "farmer") {
+
           const weight = Number(ent.weight);
           const fat = Number(ent.fat);
 
+          // Total Farmer Milk
           farmerMilk += weight;
-          farmerCream += weight * fat;
+
+          // Average Fat sirf valid fat entries se
+          if (fat > 0) {
+            fatMilk += weight;
+            farmerCream += weight * fat;
+          }
         }
 
         if (ent.customer.userType === "customer") {
+
           customerMilk += Number(ent.weight);
           customerAmountTotal += Number(ent.amount);
+
         }
+
       });
 
       setCustomerAmount(customerAmountTotal);
@@ -108,7 +119,7 @@ const Home = ({ navigation }) => {
 
       // Average Fat (Farmer only)
       const averageFat =
-        farmerMilk > 0 ? farmerCream / farmerMilk : 0;
+        fatMilk > 0 ? farmerCream / fatMilk : 0;
 
       setAvgFat(Number(averageFat.toFixed(2)));
 
@@ -211,6 +222,12 @@ const Home = ({ navigation }) => {
     (Number(saleWeight) || 0) *
     (Number(saleRate) || 0);
 
+  const formatAmount = (amount: number) => {
+    return Number.isInteger(amount)
+      ? amount.toString()
+      : amount.toFixed(2);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
@@ -247,7 +264,7 @@ const Home = ({ navigation }) => {
 
         </View>
 
-        <View style={styles.totalCard}>
+        {/* <View style={styles.totalCard}>
           <View style={styles.totalLeft}>
             <Text style={styles.totalTitle}>Today's Total Milk</Text>
             <Text style={styles.totalValue}>
@@ -308,7 +325,7 @@ const Home = ({ navigation }) => {
             </View>
           </View>
 
-        </View>
+        </View> */}
       </View>
 
       <View style={styles.listSection}>
@@ -317,6 +334,141 @@ const Home = ({ navigation }) => {
           contentContainerStyle={{ paddingBottom: 40 }}
         >
           <View style={styles.summaryCard}>
+
+            <Text style={styles.summaryTitle}>
+              Today's Farmer Milk Summary
+            </Text>
+
+            <View>
+              <View style={styles.summaryContainer}>
+
+                <View style={[styles.infoCard, { borderLeftColor: "#2563eb" }]}>
+                  <View style={styles.iconBoxBlue}>
+                    <Icon
+                      name="cup-water"
+                      size={22}
+                      color="#2563eb"
+                    />
+                  </View>
+
+                  <View>
+                    <Text style={styles.infoLabel}>
+                      Total Milk
+                    </Text>
+
+                    <Text style={styles.infoValue}>
+                      {totalWeight.toFixed(2)}L
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={[styles.infoCard, { borderLeftColor: "#10b981" }]}>
+                  <View style={styles.iconBoxGreen}>
+                    <FontAwesome
+                      name="percentage"
+                      size={18}
+                      color="#10b981"
+                    />
+                  </View>
+
+                  <View>
+                    <Text style={styles.infoLabel}>
+                      Average Fat
+                    </Text>
+
+                    <Text style={styles.infoValue}>
+                      {avgFat}%
+                    </Text>
+                  </View>
+                </View>
+
+              </View>
+
+
+
+
+
+            </View>
+
+          </View>
+
+          <View style={styles.summaryCard}>
+
+            <Text style={styles.summaryTitle}>
+              Today's Customer Milk Summary
+            </Text>
+
+            <View>
+
+              <View style={styles.summaryContainer}>
+
+                <View style={[styles.infoCard, { borderLeftColor: "#0ea5e9" }]}>
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      backgroundColor: "#e0f2fe",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      marginRight: 12,
+                    }}
+                  >
+                    <FontAwesome
+                      name="truck"
+                      size={16}
+                      color="#0ea5e9"
+                    />
+                  </View>
+
+                  <View>
+                    <Text style={styles.infoLabel}>
+                      Delivered
+                    </Text>
+
+                    <Text style={styles.infoValue}>
+                      {customerWeight.toFixed(2)}L
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={[styles.infoCard, { borderLeftColor: "#f59e0b" }]}>
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      backgroundColor: "#fef3c7",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      marginRight: 12,
+                    }}
+                  >
+                    <FontAwesome
+                      name="rupee-sign"
+                      size={18}
+                      color="#f59e0b"
+                    />
+                  </View>
+
+                  <View>
+                    <Text style={styles.infoLabel}>
+                      Collected
+                    </Text>
+
+                    <Text style={styles.infoValue}>
+                      ₹{formatAmount(customerAmount)}
+                    </Text>
+                  </View>
+                </View>
+
+              </View>
+
+
+
+            </View>
+          </View>
+          {/* <View style={styles.summaryCard}>
             <Text style={styles.summaryTitle}>Today's Milk Summary</Text>
 
             <View style={styles.summaryRow}>
@@ -363,7 +515,7 @@ const Home = ({ navigation }) => {
               </View>
 
             </View>
-          </View>
+          </View> */}
           {/* PREMIUM STATS GRID SECTION */}
           <View style={styles.gridContainer}>
             <View style={styles.gridRow}>
@@ -466,7 +618,9 @@ const Home = ({ navigation }) => {
 
               <View style={styles.amountCol}>
                 <Text style={styles.currencySymbol}>₹</Text>
-                <Text style={styles.amountValue}>{Number(ent.amount).toFixed(2)}</Text>
+                <Text style={styles.amountValue}>
+                  {formatAmount(Number(ent.amount))}
+                </Text>
               </View>
             </View>
           ))}
@@ -729,6 +883,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
+  summaryItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+
+  summaryLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  summaryIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+
+  summaryText: {
+    fontSize: 15,
+    color: "#334155",
+    fontWeight: "600",
+  },
+
+  summaryNumber: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+
+  summaryDivider: {
+    height: 1,
+    backgroundColor: "#f1f5f9",
+    marginVertical: 8,
+  },
   iconBoxGreen: {
     width: 40,
     height: 40,
@@ -934,8 +1126,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     marginHorizontal: 20,
     marginBottom: 18,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 18,
+    padding: 18,
     elevation: 3,
     shadowColor: "#000",
     shadowOpacity: 0.05,
@@ -953,24 +1145,29 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: 14,
   },
 
   summaryBox: {
     flex: 1,
+    backgroundColor: "#f8fafc",
+    borderRadius: 12,
+    paddingVertical: 18,
     alignItems: "center",
   },
 
   summaryLabel: {
-    fontSize: 11,
-    color: "#94a3b8",
-    textTransform: "uppercase",
+    fontSize: 12,
+    color: "#64748b",
+    fontWeight: "600",
+    textAlign: "center",
   },
 
   summaryValue: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#1e293b",
-    marginTop: 6,
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#0f172a",
+    marginTop: 8,
   },
 
   summarySub: {

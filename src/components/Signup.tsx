@@ -29,6 +29,7 @@ const SignupScreen = (props: { onClickLogin: () => void }) => {
   const [password, setPassword] = useState('');
   const [firmName, setFirmName] = useState('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [address, setAddress] = useState('');
 
   // ... handleSignup logic remains the same ...
@@ -48,7 +49,7 @@ const SignupScreen = (props: { onClickLogin: () => void }) => {
       });
       return;
     }
-    
+
     setIsLoading(true);
     try {
       const response = await fetch(`${BASE_URL}/firm/create`, {
@@ -153,15 +154,32 @@ const SignupScreen = (props: { onClickLogin: () => void }) => {
 
             <Text style={styles.label}>Password</Text>
             <View style={styles.inputWrapper}>
-              <Icon name="lock" size={18} color="#5086E7" style={styles.icon} />
+              <Icon
+                name="lock"
+                size={18}
+                color="#5086E7"
+                style={styles.icon}
+              />
+
               <TextInput
                 placeholder="Create password"
                 style={styles.input}
-                secureTextEntry
+                secureTextEntry={!showPassword}
                 value={password}
                 onChangeText={setPassword}
                 placeholderTextColor="#A0A0A0"
               />
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Icon
+                  name={showPassword ? 'eye-slash' : 'eye'}
+                  size={18}
+                  color="#888"
+                />
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity style={styles.button} onPress={handleSignup}>
