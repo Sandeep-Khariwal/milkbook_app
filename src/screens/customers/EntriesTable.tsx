@@ -346,6 +346,8 @@ const EntriesTable = (props: {
     ];
   });
 
+  const remainingAmount = monthlyTotalAmount - purchaseAmount;
+
   if (isLoading) return <LoadingOverlay visible />;
 
   return (
@@ -449,7 +451,7 @@ const EntriesTable = (props: {
                 justifyContent: "space-between",
                 marginBottom: 8,
               }}>
-              <Text>Purchased Stock</Text>
+              <Text>Purchases / Advance</Text>
               <Text style={{ fontWeight: "700", color: "#DC2626" }}>
                 -₹{purchaseAmount.toFixed(2)}
               </Text>
@@ -480,9 +482,9 @@ const EntriesTable = (props: {
                 style={{
                   fontSize: 22,
                   fontWeight: "800",
-                  color: "#2563EB",
+                  color: remainingAmount < 0 ? "#DC2626" : "#2563EB",
                 }}>
-                ₹{(monthlyTotalAmount - purchaseAmount).toFixed(2)}
+                ₹{remainingAmount.toFixed(2)}
               </Text>
             </View>
 
