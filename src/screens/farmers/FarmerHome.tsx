@@ -86,6 +86,10 @@ const FarmerHome = ({ route }: { route: any }) => {
     try {
       const response = await fetch(`${BASE_URL}/user/getUser/${id}`);
       const { user } = await response.json();
+
+      console.log("============== GET USER ==============");
+      console.log("Backend Earnings:", user.earnings);
+
       setEarnings(user.earnings);
       setCustomer(user);
     } catch (e) {
@@ -395,7 +399,10 @@ const FarmerHome = ({ route }: { route: any }) => {
               setBuffaloTotalAmount(bAmt);
               setCowTotalAmount(cAmt);
             }}
-            setTotalEarn={(wt, amnt) => setEarnings(amnt)}
+            setTotalEarn={(wt, amnt) => {
+              console.log("============== ENTRIES TABLE ==============");
+              console.log("Calculated Earnings:", amnt);
+            }}
           />
         </View>
       </ScrollView>
