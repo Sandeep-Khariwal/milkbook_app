@@ -91,7 +91,6 @@ const getChartRate = (
     return null;
   }
 
-  // Fat ke liye exact/nearest row
   const fatRow = rateChart.rates.reduce(
     (closest: any, item: any) => {
       const currentDiff = Math.abs(
