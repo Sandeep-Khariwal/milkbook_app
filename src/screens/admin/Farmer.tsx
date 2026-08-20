@@ -33,6 +33,7 @@ const Farmers = () => {
     buffaloRate: '',
     cowRate: '',
     userCode: '',
+    hisabCycleDays: '',
     cowMilk: {
       activeCowMilk: false,
       fixedAmount: false,
@@ -274,7 +275,7 @@ const Farmers = () => {
                 <View style={styles.cardOne}>
                   <Text
                     style={{
-                      fontSize: 17,
+                      fontSize: 19,
                       fontWeight: 700,
                       color: !Farmer.milkUpdated ? '#e54646' : '#0d8e1e',
                     }}
@@ -285,44 +286,43 @@ const Farmers = () => {
                   <View style={styles.timeContainer}>
                     {(Farmer?.cowMilk?.morningTimeMilk ||
                       Farmer?.buffaloMilk?.morningTimeMilk) && (
-                      <View style={styles.circle}>
-                        <Text style={styles.timeText}>M</Text>
-                      </View>
-                    )}
+                        <View style={styles.circle}>
+                          <Text style={styles.timeText}>M</Text>
+                        </View>
+                      )}
 
                     {(Farmer?.cowMilk?.eveningTimeMilk ||
                       Farmer?.buffaloMilk?.eveningTimeMilk) && (
-                      <View style={styles.circle}>
-                        <Text style={styles.timeText}>E</Text>
-                      </View>
-                    )}
+                        <View style={styles.circle}>
+                          <Text style={styles.timeText}>E</Text>
+                        </View>
+                      )}
                   </View>
                 </View>
                 {
                   isAdmin &&
-                <View style={styles.cardTwo}>
-                  <Icon
-                    name="edit"
-                    size={26}
-                    color="#333"
-                    onPress={() => {
-                      setIsEditFarmer(true);
-                      setBottomSheetIndex(true);
-
-                      setSelectedFarmer(Farmer);
-                      setFarmer(Farmer);
-                    }}
-                  />
-                  <Icon
-                    name="trash-2"
-                    size={24}
-                    color="#FF0000"
-                    onPress={() => {
-                      setBottomSheetDeleteIndex(true),
-                        setSelectedFarmer(Farmer);
-                    }}
-                  />
-                </View>
+                  <View style={styles.cardTwo}>
+                    <Icon
+                      name="edit"
+                      size={26}
+                      color="#333"
+                      onPress={() => {
+                        navigation.navigate('FarmerForm', {
+                          mode: 'edit',
+                          farmer: Farmer,
+                        });
+                      }}
+                    />
+                    <Icon
+                      name="trash-2"
+                      size={24}
+                      color="#FF0000"
+                      onPress={() => {
+                        setBottomSheetDeleteIndex(true),
+                          setSelectedFarmer(Farmer);
+                      }}
+                    />
+                  </View>
                 }
               </TouchableOpacity>
             ))
@@ -335,7 +335,7 @@ const Farmers = () => {
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ fontSize: 18, color: '#8e8e98ff' }}>
+              <Text style={{ fontSize: 20, color: '#8e8e98ff' }}>
                 No Farmers created yet
               </Text>
             </View>
@@ -348,34 +348,9 @@ const Farmers = () => {
           <TouchableOpacity
             style={styles.button}
             onPress={() => {
-              setIsEditFarmer(false),
-                setFarmer({
-                  name: '',
-                  phoneNumber: '',
-                  password: '',
-                  buffaloRate: '',
-                  cowRate: '',
-                  userCode: '',
-                  cowMilk: {
-                    activeCowMilk: false,
-                    fixedAmount: false,
-                    fatAmount: false,
-                    snfAmount: false,
-                    morningTimeMilk: false,
-                    eveningTimeMilk: false,
-                  },
-                  buffaloMilk: {
-                    activeBuffaloMilk: false,
-                    fixedAmount: false,
-                    fatAmount: false,
-                    snfAmount: false,
-                    morningTimeMilk: false,
-                    eveningTimeMilk: false,
-                  },
-                  _id: '',
-                });
-              setSelectedFarmer(null);
-              setBottomSheetIndex(true);
+              navigation.navigate('FarmerForm', {
+                mode: 'create',
+              });
             }}
           >
             <Text style={styles.text}>Create Farmer</Text>
@@ -386,7 +361,7 @@ const Farmers = () => {
         animationType="fade"
         transparent={true}
         visible={bottomSheetIndex}
-        onRequestClose={() => {}}
+        onRequestClose={() => { }}
         style={{
           flex: 1,
           display: 'flex',
@@ -439,7 +414,7 @@ const Farmers = () => {
                   textContainerStyle={{ marginLeft: 4 }}
                   textStyle={{
                     color: '#000',
-                    fontSize: 16,
+                    fontSize: 19,
                     textDecorationLine: 'none',
                   }}
                   isChecked={Farmer?.buffaloMilk?.activeBuffaloMilk}
@@ -481,7 +456,7 @@ const Farmers = () => {
                 textContainerStyle={{ marginLeft: 4 }}
                 textStyle={{
                   color: '#000',
-                  fontSize: 16,
+                  fontSize: 19,
                   textDecorationLine: 'none',
                 }}
                 isChecked={Farmer?.buffaloMilk?.fixedAmount}
@@ -508,7 +483,7 @@ const Farmers = () => {
                 textContainerStyle={{ marginLeft: 4 }}
                 textStyle={{
                   color: '#000',
-                  fontSize: 16,
+                  fontSize: 19,
                   textDecorationLine: 'none',
                 }}
                 isChecked={Farmer?.buffaloMilk?.fatAmount}
@@ -535,7 +510,7 @@ const Farmers = () => {
                 textContainerStyle={{ marginLeft: 4 }}
                 textStyle={{
                   color: '#000',
-                  fontSize: 16,
+                  fontSize: 19,
                   textDecorationLine: 'none',
                 }}
                 isChecked={Farmer?.buffaloMilk?.snfAmount}
@@ -583,7 +558,7 @@ const Farmers = () => {
                   textContainerStyle={{ marginLeft: 4 }}
                   textStyle={{
                     color: '#000',
-                    fontSize: 16,
+                    fontSize: 19,
                     textDecorationLine: 'none',
                   }}
                   isChecked={Farmer?.cowMilk?.activeCowMilk}
@@ -623,7 +598,7 @@ const Farmers = () => {
                 textContainerStyle={{ marginLeft: 4 }}
                 textStyle={{
                   color: '#000',
-                  fontSize: 16,
+                  fontSize: 19,
                   textDecorationLine: 'none',
                 }}
                 isChecked={Farmer?.cowMilk?.fixedAmount}
@@ -650,7 +625,7 @@ const Farmers = () => {
                 textContainerStyle={{ marginLeft: 4 }}
                 textStyle={{
                   color: '#000',
-                  fontSize: 16,
+                  fontSize: 19,
                   textDecorationLine: 'none',
                 }}
                 isChecked={Farmer?.cowMilk?.fatAmount}
@@ -677,7 +652,7 @@ const Farmers = () => {
                 textContainerStyle={{ marginLeft: 4 }}
                 textStyle={{
                   color: '#000',
-                  fontSize: 16,
+                  fontSize: 19,
                   textDecorationLine: 'none',
                 }}
                 isChecked={Farmer?.cowMilk?.snfAmount}
@@ -733,7 +708,7 @@ const Farmers = () => {
                     {
                       width:
                         Farmer?.buffaloMilk?.activeBuffaloMilk &&
-                        Farmer?.cowMilk?.activeCowMilk
+                          Farmer?.cowMilk?.activeCowMilk
                           ? '50%'
                           : '100%',
                     },
@@ -759,7 +734,7 @@ const Farmers = () => {
                     {
                       width:
                         Farmer?.buffaloMilk?.activeBuffaloMilk &&
-                        Farmer?.cowMilk?.activeCowMilk
+                          Farmer?.cowMilk?.activeCowMilk
                           ? '50%'
                           : '100%',
                     },
@@ -806,6 +781,25 @@ const Farmers = () => {
                   value={Farmer.password}
                   style={styles.textInput}
                   placeholder="Enter Password"
+                />
+              </View>
+            </View>
+
+            <View style={styles.stockContainer}>
+              <View style={[styles.inputBox, { width: '100%' }]}>
+                <TextInput
+                  editable
+                  keyboardType="numeric"
+                  maxLength={3}
+                  onChangeText={text =>
+                    setFarmer(prev => ({
+                      ...prev,
+                      hisabCycleDays: text,
+                    }))
+                  }
+                  value={String(Farmer.hisabCycleDays ?? '')}
+                  style={styles.textInput}
+                  placeholder="Hisab Cycle (Days)"
                 />
               </View>
             </View>
@@ -858,7 +852,7 @@ const Farmers = () => {
                       textContainerStyle={{ marginLeft: 6 }}
                       textStyle={{
                         color: '#000',
-                        fontSize: 16,
+                        fontSize: 19,
                         textDecorationLine: 'none',
                       }}
                       isChecked={Farmer?.buffaloMilk?.morningTimeMilk}
@@ -883,7 +877,7 @@ const Farmers = () => {
                       textContainerStyle={{ marginLeft: 6 }}
                       textStyle={{
                         color: '#000',
-                        fontSize: 16,
+                        fontSize: 19,
                         textDecorationLine: 'none',
                       }}
                       isChecked={Farmer?.buffaloMilk?.eveningTimeMilk}
@@ -948,7 +942,7 @@ const Farmers = () => {
                       textContainerStyle={{ marginLeft: 6 }}
                       textStyle={{
                         color: '#000',
-                        fontSize: 16,
+                        fontSize: 19,
                         textDecorationLine: 'none',
                       }}
                       isChecked={Farmer?.cowMilk?.morningTimeMilk}
@@ -973,7 +967,7 @@ const Farmers = () => {
                       textContainerStyle={{ marginLeft: 6 }}
                       textStyle={{
                         color: '#000',
-                        fontSize: 16,
+                        fontSize: 19,
                         textDecorationLine: 'none',
                       }}
                       isChecked={Farmer?.cowMilk?.eveningTimeMilk}
@@ -1010,7 +1004,7 @@ const Farmers = () => {
         animationType="fade"
         transparent={true}
         visible={bottomSheetDeleteIndex}
-        onRequestClose={() => {}}
+        onRequestClose={() => { }}
         style={{
           flex: 1,
           display: 'flex',
@@ -1026,7 +1020,7 @@ const Farmers = () => {
             <View>
               <Text
                 style={{
-                  fontSize: 18,
+                  fontSize: 20,
                   color: '#8e8e98ff',
                   textAlign: 'center',
                 }}
@@ -1062,6 +1056,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
   stocksContainer: {
     flex: 1,
     width: '100%',
@@ -1069,6 +1064,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     margin: 0,
   },
+
   cardContainer: {
     width: '95%',
     backgroundColor: '#fff',
@@ -1080,6 +1076,7 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'row',
   },
+
   cardOne: {
     width: '50%',
     height: '100%',
@@ -1089,6 +1086,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+
   cardTwo: {
     width: '50%',
     height: '100%',
@@ -1099,11 +1097,13 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingRight: 10,
   },
+
   contentContainer: {
     height: 300,
     padding: 36,
     alignItems: 'center',
   },
+
   ButtonBox: {
     display: 'flex',
     alignItems: 'center',
@@ -1113,6 +1113,7 @@ const styles = StyleSheet.create({
     top: '90%',
     width: '90%',
   },
+
   button: {
     width: '90%',
     borderWidth: 1,
@@ -1124,8 +1125,9 @@ const styles = StyleSheet.create({
     display: 'flex',
     justifyContent: 'center',
   },
+
   text: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: '#fff',
   },
@@ -1137,6 +1139,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 10,
   },
+
   inputBox: {
     width: '50%',
     backgroundColor: '#ebeef2ff',
@@ -1144,9 +1147,12 @@ const styles = StyleSheet.create({
     height: 40,
     fontWeight: '700',
   },
+
   textInput: {
     padding: 10,
+    fontSize: 19,
   },
+
   formBox: {
     display: 'flex',
     alignItems: 'center',
@@ -1155,6 +1161,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 20,
   },
+
   deletebutton: {
     width: '40%',
     borderWidth: 1,
@@ -1165,6 +1172,7 @@ const styles = StyleSheet.create({
     display: 'flex',
     justifyContent: 'center',
   },
+
   deletebuttonYes: {
     width: '40%',
     alignItems: 'center',
@@ -1174,11 +1182,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#5086E7',
   },
+
   centeredView: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   modalView: {
     margin: 20,
     backgroundColor: 'white',
@@ -1191,26 +1201,29 @@ const styles = StyleSheet.create({
       height: 2,
     },
   },
+
   timeContainer: {
     marginLeft: 5,
     flexDirection: 'row',
-    gap: 10, // spacing between circles (or use marginRight)
+    gap: 10,
   },
 
   circle: {
-    width: 20,
-    height: 20,
+    width: 22,
+    height: 22,
     borderWidth: 2,
     borderColor: '#5086E7',
-    borderRadius: 20, // makes it a circle
-    // backgroundColor: '#5086E7',
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  timeText: {
-    color: '#5086E7',
-    fontWeight: '700',
-    fontSize: 12,
-  },
+timeText: {
+  color: '#5086E7',
+  fontWeight: '700',
+  fontSize: 14,
+  lineHeight: 16,
+  textAlign: 'center',
+  includeFontPadding: false,
+},
 });

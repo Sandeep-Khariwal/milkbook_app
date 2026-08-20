@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     borderColor: '#1f2937',
   },
   headerTitle: { 
-    fontSize: 18, 
+    fontSize: 20, 
     fontWeight: '700', 
     color: '#ffffff',
     letterSpacing: 0.5,
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   },
   badgeCountText: {
     color: '#818cf8',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '700',
   },
   listContainer: {
@@ -206,13 +206,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   idLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '600',
     color: '#475569',
     letterSpacing: 1,
   },
   idValue: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#94a3b8',
     marginTop: 2,
     maxWidth: 150,
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   totalLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '700',
     color: '#6366f1',
     letterSpacing: 1,
@@ -258,17 +258,17 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   subLabel: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '600',
     color: '#64748b',
   },
   subValue: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
     color: '#f1f5f9',
   },
   subValueCurrency: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: '600',
     color: '#10b981',
     marginTop: 2,
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   footerDateText: {
-    fontSize: 11,
+    fontSize: 13,
     color: '#475569',
     fontWeight: '500',
   },

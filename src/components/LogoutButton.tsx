@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   triggerText: {
     color: '#e11d48',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 18,
     marginLeft: 12,
   },
   // Modal Styles
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#64748b',
     textAlign: 'center',
     lineHeight: 20,
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
   cancelBtnText: {
     color: '#475569',
     fontWeight: '600',
-    fontSize: 15,
+    fontSize: 17,
   },
   confirmBtn: {
     flex: 1,
@@ -191,6 +191,6 @@ const styles = StyleSheet.create({
   confirmBtnText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 17,
   },
 });

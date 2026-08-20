@@ -184,7 +184,7 @@ const DeletedUsers = () => {
               <View key={customer._id ?? index} style={styles.cardContainer}>
                 <View style={styles.cardOne}>
                   <Text
-                    style={{ fontSize: 17, fontWeight: 700, color: '#5086E7' }}
+                    style={{ fontSize: 19, fontWeight: 700, color: '#5086E7' }}
                   >
                     {customer.name} ({customer.userCode})
                   </Text>
@@ -219,7 +219,7 @@ const DeletedUsers = () => {
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ fontSize: 18, color: '#8e8e98ff' }}>
+              <Text style={{ fontSize: 20, color: '#8e8e98ff' }}>
                 No Users Deleted yet
               </Text>
             </View>
@@ -246,7 +246,7 @@ const DeletedUsers = () => {
             <View>
               <Text
                 style={{
-                  fontSize: 18,
+                  fontSize: 20,
                   color: '#8e8e98ff',
                   textAlign: 'center',
                 }}
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: '#fff',
   },

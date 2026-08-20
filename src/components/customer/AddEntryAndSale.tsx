@@ -45,6 +45,7 @@ const AddEntryAndSale = (props: {
   const [saleDate, setSaleDate] = useState<Date>(new Date());
   const [open, setOpen] = useState<boolean>(false);
   const [isBuffalo, setIsBuffalo] = useState<boolean>(true);
+  const [rateChart, setRateChart] = useState<any>(null);
   const clickedRef = useRef<any>(0);
 
   useEffect(() => {
@@ -57,7 +58,96 @@ const AddEntryAndSale = (props: {
     else if (props.customer.cowMilk?.activeCowMilk) setIsBuffalo(false);
   }, [props.customer]);
 
-  useEffect(() => { getAllItems(); }, []);
+  useEffect(() => {
+    getAllItems();
+    getActiveRateChart();
+  }, []);
+
+  const getActiveRateChart = async () => {
+    try {
+      const res = await fetch(
+        `${BASE_URL}/milk-rate/active/${firm.id}`,
+      );
+
+      const data = await res.json();
+
+      if (res.ok && data.chart) {
+        setRateChart(data.chart);
+        console.log('Active Rate Chart:', data.chart);
+      } else {
+        setRateChart(null);
+      }
+    } catch (error) {
+      console.log('Rate Chart Fetch Error:', error);
+      setRateChart(null);
+    }
+  };
+
+const getChartRate = (
+  fat: number,
+  snf: number,
+): number | null => {
+  if (!rateChart?.rates?.length) {
+    return null;
+  }
+
+  const fatRow = rateChart.rates.reduce(
+    (closest: any, item: any) => {
+      const currentDiff = Math.abs(
+        Number(item.fat) - fat,
+      );
+
+      if (!closest) {
+        return {
+          item,
+          diff: currentDiff,
+        };
+      }
+
+      return currentDiff < closest.diff
+        ? {
+            item,
+            diff: currentDiff,
+          }
+        : closest;
+    },
+    null,
+  );
+
+  if (!fatRow) {
+    return null;
+  }
+
+  // SNF ke liye nearest value
+  const snfRate = fatRow.item.rates.reduce(
+    (closest: any, item: any) => {
+      const currentDiff = Math.abs(
+        Number(item.snf) - snf,
+      );
+
+      if (!closest) {
+        return {
+          item,
+          diff: currentDiff,
+        };
+      }
+
+      return currentDiff < closest.diff
+        ? {
+            item,
+            diff: currentDiff,
+          }
+        : closest;
+    },
+    null,
+  );
+
+  if (!snfRate) {
+    return null;
+  }
+
+  return Number(snfRate.item.rate);
+};
 
   const getAllItems = async () => {
     try {
@@ -70,9 +160,9 @@ const AddEntryAndSale = (props: {
   const activeMilkConfig = isBuffalo ? props.customer.buffaloMilk : props.customer.cowMilk;
 
   const addEntry = async () => {
-    console.log("clickedRef.current : ",clickedRef.current);
-    
-    if(clickedRef.current){
+    console.log("clickedRef.current : ", clickedRef.current);
+
+    if (clickedRef.current) {
       return
     }
     clickedRef.current += 1;
@@ -90,18 +180,78 @@ const AddEntryAndSale = (props: {
     setIsLoading(true);
     let amount = 0;
     let calculatedSnf = 0;
-    const rate = isBuffalo ? props.customer.buffaloRate : props.customer.cowRate;
+    const oldRate = isBuffalo
+      ? props.customer.buffaloRate
+      : props.customer.cowRate;
+
     const fatVal = Number(milkEntry.fat) || 0;
     const clrVal = Number(milkEntry.clr) || 0;
     const weightVal = Number(milkEntry.weight) || 0;
-    const rateVal = Number(rate) || 0;
+
+    let rateVal = Number(oldRate) || 0;
+
+    // Chart ke liye actual Fat/SNF values
+    const chartFat = fatVal / 10;
+    const chartSnf = clrVal / 10;
 
     if (activeMilkConfig?.snfAmount) {
-      calculatedSnf = (clrVal / 4) + (0.21 * fatVal) + 0.36;
-      amount = (calculatedSnf * weightVal * rateVal) / 100;
-    } else if (activeMilkConfig?.fatAmount && milkEntry.fat) {
-      amount = (fatVal * weightVal * rateVal) / 100;
+
+      // Rate Chart uploaded hai to Chart logic use karo
+      if (rateChart?.rates?.length) {
+
+        calculatedSnf = chartSnf;
+
+        const chartRate = getChartRate(
+          chartFat,
+          chartSnf,
+        );
+
+        if (chartRate !== null) {
+          // Chart se actual rate mila
+          rateVal = chartRate;
+
+          // Chart rate × quantity
+          amount = weightVal * rateVal;
+        } else {
+          // Chart uploaded hai but matching Fat/SNF nahi mila
+          Toast.show({
+            type: ALERT_TYPE.WARNING,
+            title: 'Rate Not Found',
+            textBody: `Rate not found for Fat ${chartFat.toFixed(1)} and SNF ${chartSnf.toFixed(1)}`,
+          });
+
+          clickedRef.current = 0;
+          setIsLoading(false);
+          return;
+        }
+
+      } else {
+
+        // ==========================================
+        // OLD LOGIC — bilkul same
+        // ==========================================
+
+        calculatedSnf =
+          (clrVal / 4) +
+          (0.21 * fatVal) +
+          0.36;
+
+        amount =
+          (calculatedSnf * weightVal * rateVal) / 100;
+      }
+
+    } else if (
+      activeMilkConfig?.fatAmount &&
+      milkEntry.fat
+    ) {
+
+      // OLD LOGIC — same
+      amount =
+        (fatVal * weightVal * rateVal) / 100;
+
     } else {
+
+      // OLD LOGIC — same
       amount = weightVal * rateVal;
     }
 
@@ -214,10 +364,10 @@ const AddEntryAndSale = (props: {
                   </View>
                 )}
                 {activeMilkConfig?.snfAmount && (
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>CLR</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="0" value={milkEntry.clr} onChangeText={t => setMilkEntry(p => ({ ...p, clr: t }))} />
-                    </View>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>CLR</Text>
+                    <TextInput style={styles.input} keyboardType="numeric" placeholder="0" value={milkEntry.clr} onChangeText={t => setMilkEntry(p => ({ ...p, clr: t }))} />
+                  </View>
                 )}
               </View>
 
@@ -236,17 +386,17 @@ const AddEntryAndSale = (props: {
       <Modal animationType="slide" transparent visible={bottomSheetSale}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-             <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Sale Product</Text>
-                <TouchableOpacity onPress={() => setBottomSheetSale(false)}><FeIcon name="x-circle" size={28} color="#999" /></TouchableOpacity>
-             </View>
-             <SelectList setSelected={(val: string) => setSelected(val)} data={stocks.map((stk: any) => ({ key: stk._id, value: stk.item }))} save="key" boxStyles={styles.dropdownBox} placeholder="Select Stock" />
-             <View style={{ marginTop: 15 }}>
-                <Text style={styles.label}>Quantity</Text>
-                <TextInput style={styles.input} keyboardType="numeric" placeholder="Enter quantity" value={selectedQuantity} onChangeText={setSelectedQuantity} />
-             </View>
-             <TouchableOpacity style={[styles.dateSelector, { marginTop: 15 }]} onPress={() => setOpen(true)}><FeIcon name="calendar" size={20} color="#5086E7" /><Text style={styles.dateSelectorText}>{saleDate.toDateString()}</Text></TouchableOpacity>
-             <TouchableOpacity style={[styles.submitBtn, { backgroundColor: '#5086E7' }]} onPress={saleProduct}><Text style={styles.submitBtnText}>Complete Sale</Text></TouchableOpacity>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Sale Product</Text>
+              <TouchableOpacity onPress={() => setBottomSheetSale(false)}><FeIcon name="x-circle" size={28} color="#999" /></TouchableOpacity>
+            </View>
+            <SelectList setSelected={(val: string) => setSelected(val)} data={stocks.map((stk: any) => ({ key: stk._id, value: stk.item }))} save="key" boxStyles={styles.dropdownBox} placeholder="Select Stock" />
+            <View style={{ marginTop: 15 }}>
+              <Text style={styles.label}>Quantity</Text>
+              <TextInput style={styles.input} keyboardType="numeric" placeholder="Enter quantity" value={selectedQuantity} onChangeText={setSelectedQuantity} />
+            </View>
+            <TouchableOpacity style={[styles.dateSelector, { marginTop: 15 }]} onPress={() => setOpen(true)}><FeIcon name="calendar" size={20} color="#5086E7" /><Text style={styles.dateSelectorText}>{saleDate.toDateString()}</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: '#5086E7' }]} onPress={saleProduct}><Text style={styles.submitBtnText}>Complete Sale</Text></TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -261,25 +411,25 @@ const styles = StyleSheet.create({
   container: { flexDirection: 'row', paddingHorizontal: 18, marginTop: 12, gap: 12 },
   minBtn: { flex: 1, backgroundColor: '#1E293B', paddingVertical: 14, borderRadius: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   saleBtn: { backgroundColor: '#FFF', borderWidth: 1.5, borderColor: '#10B981' },
-  minBtnText: { color: '#FFF', fontWeight: '700', fontSize: 13 },
+  minBtnText: { color: '#FFF', fontWeight: '700', fontSize: 15 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 25, elevation: 20 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 20, fontWeight: '800', color: '#333' },
-  label: { fontSize: 14, color: '#555', marginBottom: 8, fontWeight: '600' },
+  label: { fontSize: 16, color: '#555', marginBottom: 8, fontWeight: '600' },
   animalSelector: { flexDirection: 'row', gap: 15, marginBottom: 20 },
   animalCard: { flex: 1, alignItems: 'center', padding: 12, borderRadius: 15, borderWidth: 1.5, borderColor: '#eee' },
   animalSelected: { borderColor: '#5086E7', backgroundColor: '#eaf2ff' },
   animalIcon: { width: 45, height: 45, marginBottom: 5, resizeMode: 'contain' },
-  animalText: { fontSize: 13, color: '#999', fontWeight: 'bold' },
+  animalText: { fontSize: 15, color: '#999', fontWeight: 'bold' },
   animalTextActive: { color: '#5086E7' },
   inputRow: { flexDirection: 'row', gap: 10, marginBottom: 15 },
   inputContainer: { flex: 1 },
-  input: { backgroundColor: '#F3F6F9', borderRadius: 12, paddingHorizontal: 15, paddingVertical: 12, fontSize: 16, borderWidth: 1, borderColor: '#E8ECF0' },
+  input: { backgroundColor: '#F3F6F9', borderRadius: 12, paddingHorizontal: 15, paddingVertical: 12, fontSize: 18, borderWidth: 1, borderColor: '#E8ECF0' },
   dateSelector: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f4ff', padding: 12, borderRadius: 12, gap: 10, marginBottom: 20 },
   dateSelectorText: { color: '#5086E7', fontWeight: '600' },
   submitBtn: { backgroundColor: '#2ecc71', paddingVertical: 15, borderRadius: 15, alignItems: 'center' },
-  submitBtnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  submitBtnText: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
   dropdownBox: { borderRadius: 12, borderColor: '#E8ECF0', backgroundColor: '#F3F6F9' },
 });
 

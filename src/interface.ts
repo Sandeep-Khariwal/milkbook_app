@@ -1,10 +1,11 @@
 export interface Farmer {
-    name: string;
-    phoneNumber: string;
-    password: string;
-    cowRate: string;
-    buffaloRate: string;
-    userCode: string;
+  name: string;
+  phoneNumber: string;
+  password: string;
+  cowRate: string;
+  buffaloRate: string;
+  userCode: string;
+  hisabCycleDays: string;
     cowMilk?: {
       activeCowMilk: boolean;
       fixedAmount: boolean;

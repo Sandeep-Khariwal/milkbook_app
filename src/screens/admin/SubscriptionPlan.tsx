@@ -204,12 +204,12 @@ const styles = StyleSheet.create({
 
   bestText: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '700',
   },
 
   planTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
     marginTop: 10,
   },

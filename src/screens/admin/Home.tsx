@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
   },
 
   modalTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "700",
     color: "#0f172a",
     marginBottom: 20,
@@ -741,7 +741,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     height: 52,
-    fontSize: 15,
+    fontSize: 17,
     marginBottom: 14,
     color: "#0f172a",
   },
@@ -757,13 +757,13 @@ const styles = StyleSheet.create({
   },
 
   totalText: {
-    fontSize: 16,
+    fontSize: 18,
     color: "#334155",
     fontWeight: "600",
   },
 
   totalAmount: {
-    fontSize: 22,
+    fontSize: 24,
     color: "#2563eb",
     fontWeight: "700",
   },
@@ -779,7 +779,7 @@ const styles = StyleSheet.create({
 
   saveBtnText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
   },
 
@@ -792,29 +792,34 @@ const styles = StyleSheet.create({
 
   cancelText: {
     color: "#64748b",
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: "600",
   },
+
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
     paddingTop: Platform.OS === 'ios' ? 60 : 30,
   },
+
   headerSection: {
     paddingHorizontal: 20,
     marginBottom: 20,
   },
+
   welcomeLabel: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#64748b',
     fontWeight: '500',
   },
+
   firmNameLabel: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#1e293b',
     marginTop: 2,
   },
+
   totalCard: {
     marginTop: 20,
     backgroundColor: "#2563eb",
@@ -831,19 +836,19 @@ const styles = StyleSheet.create({
 
   totalTitle: {
     color: "#dbeafe",
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
   },
 
   totalValue: {
     color: "#fff",
-    fontSize: 34,
+    fontSize: 36,
     fontWeight: "bold",
     marginTop: 6,
   },
 
   totalUnit: {
-    fontSize: 18,
+    fontSize: 20,
     color: "#dbeafe",
   },
 
@@ -855,16 +860,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
   summaryContainer: {
     flexDirection: "row",
     marginTop: 14,
     gap: 12,
   },
-  infoCard: {
-    flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 14,
+
+infoCard: {
+  flex: 1,
+  backgroundColor: "#fff",
+  borderRadius: 16,
+  paddingVertical: 14,
+  paddingHorizontal: 12,
+  paddingRight: 14,
     flexDirection: "row",
     alignItems: "center",
     borderLeftWidth: 4,
@@ -874,6 +883,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
   },
+
   iconBoxBlue: {
     width: 40,
     height: 40,
@@ -883,6 +893,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
+
   summaryItem: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -905,13 +916,13 @@ const styles = StyleSheet.create({
   },
 
   summaryText: {
-    fontSize: 15,
+    fontSize: 16,
     color: "#334155",
     fontWeight: "600",
   },
 
   summaryNumber: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
     color: "#0f172a",
   },
@@ -921,6 +932,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f1f5f9",
     marginVertical: 8,
   },
+
   iconBoxGreen: {
     width: 40,
     height: 40,
@@ -930,21 +942,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  infoLabel: {
-    fontSize: 11,
-    color: '#94a3b8',
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
+
+infoLabel: {
+  fontSize: 14,
+  color: '#94a3b8',
+  fontWeight: '700',
+  textTransform: 'none',
+  marginBottom: 3,
+  paddingRight: 6,
+},
+
   infoValue: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#1e293b',
   },
+
   smallUnit: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#64748b',
   },
+
   listSection: {
     flex: 1,
     backgroundColor: '#fff',
@@ -957,17 +975,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 10,
   },
-  /* NEW: Premium Grid Layout Styles */
+
   gridContainer: {
     paddingHorizontal: 20,
     marginBottom: 20,
     gap: 10,
   },
+
   gridRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 10,
   },
+
   statCard: {
     flex: 1,
     backgroundColor: '#fff',
@@ -983,6 +1003,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 6,
   },
+
   statIconWrapper: {
     width: 34,
     height: 34,
@@ -991,20 +1012,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 10,
   },
+
   statContent: {
     justifyContent: 'center',
   },
+
   statCardValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#0f172a',
   },
+
   statCardLabel: {
-    fontSize: 11,
+    fontSize: 13,
     color: '#64748b',
     fontWeight: '600',
     marginTop: 1,
   },
+
   listHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1012,22 +1037,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 25,
     marginBottom: 15,
   },
+
   listTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#334155',
   },
+
   entryCountBadge: {
     backgroundColor: '#f1f5f9',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
+
   entryCountText: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#64748b',
     fontWeight: '600',
   },
+
   entryRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1036,14 +1065,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
   },
+
   dateCol: {
     flex: 1,
   },
+
   dateMain: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#1e293b',
   },
+
   shiftTag: {
     alignSelf: 'flex-start',
     paddingHorizontal: 6,
@@ -1051,45 +1083,54 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginTop: 4,
   },
+
   shiftText: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '700',
   },
+
   nameCol: {
     flex: 1.5,
     paddingHorizontal: 5,
   },
+
   userName: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '600',
     color: '#334155',
   },
+
   userCode: {
-    fontSize: 11,
+    fontSize: 13,
     color: '#94a3b8',
     marginTop: 2,
   },
+
   dataCol: {
     flex: 0.8,
-    gap: 4
+    gap: 4,
   },
+
   amountCol: {
     flex: 1.2,
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
+
   currencySymbol: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#10b981',
     fontWeight: 'bold',
     marginRight: 2,
   },
+
   amountValue: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
     color: '#1e293b',
   },
+
   statBadgeBlue: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1098,6 +1139,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
+
   statBadgeGreen: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1106,22 +1148,26 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
+
   statLabel: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: 'bold',
     color: '#64748b',
     marginRight: 4,
   },
+
   statValueBlue: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '700',
     color: '#2563eb',
   },
+
   statValueGreen: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '700',
     color: '#16a34a',
   },
+
   summaryCard: {
     backgroundColor: "#fff",
     marginHorizontal: 20,
@@ -1136,7 +1182,7 @@ const styles = StyleSheet.create({
   },
 
   summaryTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     color: "#0f172a",
     marginBottom: 14,
@@ -1157,24 +1203,25 @@ const styles = StyleSheet.create({
   },
 
   summaryLabel: {
-    fontSize: 12,
+    fontSize: 14,
     color: "#64748b",
     fontWeight: "600",
     textAlign: "center",
   },
 
   summaryValue: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "700",
     color: "#0f172a",
     marginTop: 8,
   },
 
   summarySub: {
-    fontSize: 11,
+    fontSize: 13,
     color: "#64748b",
     marginTop: 2,
   },
+
   headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1195,7 +1242,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "700",
     marginLeft: 6,
-    fontSize: 13,
+    fontSize: 15,
   },
 });
 

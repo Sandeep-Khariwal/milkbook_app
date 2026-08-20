@@ -42,7 +42,7 @@ const AllFarmers = () => {
           <View style={styles.modalView}>
             <Text
               style={{
-                fontSize: 18,
+                fontSize: 20,
                 color: '#727276ff',
                 textAlign: 'center',
               }}

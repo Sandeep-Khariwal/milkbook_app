@@ -147,14 +147,14 @@ const styles = StyleSheet.create({
   },
 
   name: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     color: '#333',
   },
 
   phone: {
     marginTop: 8,
-    fontSize: 14,
+    fontSize: 16,
     color: '#555',
   },
 
@@ -166,12 +166,12 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: 13,
+    fontSize: 15,
     color: '#888',
   },
 
   expiry: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
   },
 
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
 
   statusText: {
     color: '#fff',
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '700',
   },
 });

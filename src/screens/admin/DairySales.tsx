@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
     },
 
     subtitle: {
-        fontSize: 14,
+        fontSize: 16,
         color: "#64748b",
         marginTop: 4,
     },
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
 
     totalTitle: {
         color: "#dbeafe",
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: "600",
     },
 
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
 
     smallTitle: {
         color: "#94a3b8",
-        fontSize: 12,
+        fontSize: 14,
         textTransform: "uppercase",
     },
 
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
     listHeading: {
         marginTop: 25,
         marginHorizontal: 20,
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: "700",
         color: "#0f172a",
         marginBottom: 12,
@@ -570,14 +570,14 @@ const styles = StyleSheet.create({
     },
 
     emptyTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: "700",
         color: "#334155",
         marginTop: 16,
     },
 
     emptySub: {
-        fontSize: 13,
+        fontSize: 15,
         color: "#94a3b8",
         marginTop: 6,
         textAlign: "center",
@@ -597,13 +597,13 @@ const styles = StyleSheet.create({
     },
 
     customerName: {
-        fontSize: 17,
+        fontSize: 19,
         fontWeight: "700",
         color: "#0f172a",
     },
 
     saleInfo: {
-        fontSize: 13,
+        fontSize: 15,
         color: "#64748b",
         marginTop: 5,
     },
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         height: 52,
         marginBottom: 14,
-        fontSize: 15,
+        fontSize: 17,
         color: "#0f172a",
     },
 
@@ -669,7 +669,7 @@ const styles = StyleSheet.create({
     },
 
     totalLabel: {
-        fontSize: 16,
+        fontSize: 18,
         color: "#334155",
         fontWeight: "600",
     },
@@ -692,7 +692,7 @@ const styles = StyleSheet.create({
     saveText: {
         color: "#fff",
         fontWeight: "700",
-        fontSize: 16,
+        fontSize: 18,
     },
 
     cancelBtn: {
@@ -705,6 +705,6 @@ const styles = StyleSheet.create({
     cancelText: {
         color: "#64748b",
         fontWeight: "600",
-        fontSize: 15,
+        fontSize: 17,
     },
 });

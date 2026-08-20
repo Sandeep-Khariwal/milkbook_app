@@ -388,6 +388,7 @@ const FarmerHome = ({ route }: { route: any }) => {
             userId={customer._id}
             isCustomer={isFarmer}
             customer={customer}
+            hisabCycleDays={customer.hisabCycleDays}
             userType={userType}
             dataUpdate={() => {
               getUser();
@@ -462,7 +463,7 @@ const FarmerHome = ({ route }: { route: any }) => {
               style={styles.submitPaymentBtn}
               onPress={AddPayment}
             >
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 18 }}>
                 Confirm Payment
               </Text>
             </TouchableOpacity>
@@ -526,7 +527,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButton: { marginRight: 15, padding: 5 },
-  welcome: { color: '#94A3B8', fontSize: 14 },
+  welcome: { color: '#94A3B8', fontSize: 16 },
   company: { color: '#fff', fontSize: 26, fontWeight: '800', marginTop: 4 },
   profileBtn: {
     width: 48,
@@ -558,7 +559,7 @@ const styles = StyleSheet.create({
   },
   avatarText: { color: '#fff', fontWeight: 'bold', fontSize: 24 },
   name: { fontSize: 20, fontWeight: '700', color: '#0F172A' },
-  subText: { color: '#64748B', marginTop: 4, fontSize: 14 },
+  subText: { color: '#64748B', marginTop: 4, fontSize: 16 },
   balanceCard: {
     marginHorizontal: 18,
     backgroundColor: '#2563EB',
@@ -566,7 +567,7 @@ const styles = StyleSheet.create({
     padding: 24,
     elevation: 8,
   },
-  balanceTitle: { color: '#BFDBFE', fontSize: 16, fontWeight: '600' },
+  balanceTitle: { color: '#BFDBFE', fontSize: 18, fontWeight: '600' },
   rowCenter: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
   balanceAmount: {
     color: '#fff',
@@ -588,7 +589,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     color: '#FFF',
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: 'bold',
     marginBottom: 8,
     textTransform: 'uppercase',
@@ -600,8 +601,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 4,
   },
-  metaMetricLabel: { color: '#DBEAFE', fontSize: 12, fontWeight: '500' },
-  statValue: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  metaMetricLabel: { color: '#DBEAFE', fontSize: 14, fontWeight: '500' },
+  statValue: { color: '#fff', fontSize: 17, fontWeight: '700' },
   actionButtonContainer: {
     flexDirection: 'row',
     marginHorizontal: 18,
@@ -642,7 +643,7 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     elevation: 2,
   },
-  viewBalancesBtnText: { color: '#1E293B', fontWeight: '700', fontSize: 15 },
+  viewBalancesBtnText: { color: '#1E293B', fontWeight: '700', fontSize: 17 },
   saveBalanceBtn: {
     backgroundColor: '#4F46E5',
     marginHorizontal: 18,
@@ -655,7 +656,7 @@ const styles = StyleSheet.create({
     gap: 8,
     elevation: 4,
   },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  btnText: { color: '#fff', fontWeight: '700', fontSize: 17 },
   centeredView: {
     flex: 1,
     justifyContent: 'center',
@@ -691,14 +692,14 @@ const styles = StyleSheet.create({
   },
 
   summaryTitle: {
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: '700',
     color: '#0F172A',
   },
 
   summarySubtitle: {
     marginTop: 4,
-    fontSize: 13,
+    fontSize: 15,
     color: '#64748B',
   },
 
@@ -720,7 +721,7 @@ const styles = StyleSheet.create({
   modalHeaderTitle: { fontSize: 22, fontWeight: '800', color: '#0F172A' },
   modalInputWrapper: { marginBottom: 15 },
   inputLabel: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#64748B',
     marginBottom: 8,
     fontWeight: '600',
@@ -729,7 +730,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
     borderRadius: 12,
     padding: 15,
-    fontSize: 16,
+    fontSize: 18,
     color: '#0F172A',
   },
   datePickerToggle: {
@@ -763,7 +764,7 @@ const styles = StyleSheet.create({
   logoutSub: {
     color: '#64748B',
     textAlign: 'center',
-    fontSize: 16,
+    fontSize: 18,
     lineHeight: 22,
   },
   cancelBtn: {
@@ -799,12 +800,12 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
   },
-  minBtnText: { color: '#1E293B', fontWeight: '600', fontSize: 13 },
+  minBtnText: { color: '#1E293B', fontWeight: '600', fontSize: 15 },
   saveBtnActive: {
     backgroundColor: '#10B981',
     borderColor: '#10B981',
   },
-  minBtnTextActive: { color: '#FFF', fontWeight: '600', fontSize: 13 },
+  minBtnTextActive: { color: '#FFF', fontWeight: '600', fontSize: 15 },
 });
 
 export default FarmerHome;

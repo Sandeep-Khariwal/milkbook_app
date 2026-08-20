@@ -27,7 +27,7 @@ const Customers = () => {
   const firm = useSelector((state: any) => state.firm.value);
 
   const isAdmin = firm.role === "admin"
-  
+
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [customer, setCustomer] = useState<Farmer>({
@@ -37,6 +37,7 @@ const Customers = () => {
     buffaloRate: '',
     cowRate: '',
     userCode: '',
+    hisabCycleDays: '',
     cowMilk: {
       activeCowMilk: false,
       fixedAmount: false,
@@ -186,7 +187,7 @@ const Customers = () => {
       (!customer.name ||
         !customer.phoneNumber ||
         !customer.password ||
-        !customer.userCode ) &&
+        !customer.userCode) &&
       !isEditCustomer
     ) {
       Toast.show({
@@ -340,7 +341,7 @@ const Customers = () => {
                 <View style={styles.cardOne}>
                   <Text
                     style={{
-                      fontSize: 17,
+                      fontSize: 19,
                       fontWeight: 700,
                       color: !customer.milkUpdated ? '#e54646' : '#0d8e1e',
                     }}
@@ -351,44 +352,44 @@ const Customers = () => {
                   <View style={styles.timeContainer}>
                     {(customer?.cowMilk?.morningTimeMilk ||
                       customer?.buffaloMilk?.morningTimeMilk) && (
-                      <View style={styles.circle}>
-                        <Text style={styles.timeText}>M</Text>
-                      </View>
-                    )}
+                        <View style={styles.circle}>
+                          <Text style={styles.timeText}>M</Text>
+                        </View>
+                      )}
 
                     {(customer?.cowMilk?.eveningTimeMilk ||
                       customer?.buffaloMilk?.eveningTimeMilk) && (
-                      <View style={styles.circle}>
-                        <Text style={styles.timeText}>E</Text>
-                      </View>
-                    )}
+                        <View style={styles.circle}>
+                          <Text style={styles.timeText}>E</Text>
+                        </View>
+                      )}
                   </View>
                 </View>
                 {
                   isAdmin &&
-                <View style={styles.cardTwo}>
-                  <Icon
-                    name="edit"
-                    size={26}
-                    color="#333"
-                    onPress={() => {
-                      setIsEditCustomer(true);
-                      setBottomSheetIndex(true);
-
-                      setSelectedCustomer(customer);
-                      setCustomer(customer);
-                    }}
-                  />
-                  <Icon
-                    name="trash-2"
-                    size={24}
-                    color="#FF0000"
-                    onPress={() => {
-                      setBottomSheetDeleteIndex(true),
-                        setSelectedCustomer(customer);
-                    }}
-                  />
-                </View>
+                  <View style={styles.cardTwo}>
+                    <Icon
+                      name="edit"
+                      size={26}
+                      color="#333"
+                      onPress={() => {
+                        navigation.navigate('FarmerForm', {
+                          mode: 'edit',
+                          userType: 'customer',
+                          farmer: customer,
+                        });
+                      }}
+                    />
+                    <Icon
+                      name="trash-2"
+                      size={24}
+                      color="#FF0000"
+                      onPress={() => {
+                        setBottomSheetDeleteIndex(true),
+                          setSelectedCustomer(customer);
+                      }}
+                    />
+                  </View>
                 }
               </TouchableOpacity>
             ))
@@ -401,65 +402,34 @@ const Customers = () => {
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ fontSize: 18, color: '#8e8e98ff' }}>
+              <Text style={{ fontSize: 20, color: '#8e8e98ff' }}>
                 No Customers created yet
               </Text>
             </View>
           )}
         </View>
       </ScrollView>
-  {
-    isAdmin && 
-      <View style={styles.ButtonBox}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => {
-            setIsEditCustomer(false),
-              setCustomer({
-                name: '',
-                phoneNumber: '',
-                password: '',
-                buffaloRate: '',
-                cowRate: '',
-                userCode: '',
-                cowMilk: {
-                  activeCowMilk: false,
-                  fixedAmount: false,
-                  fatAmount: false,
-                  snfAmount: false,
-                  morningTimeMilk: false,
-                  eveningTimeMilk: false,
-                },
-                buffaloMilk: {
-                  activeBuffaloMilk: false,
-                  fixedAmount: false,
-                  fatAmount: false,
-                  snfAmount: false,
-                  morningTimeMilk: false,
-                  eveningTimeMilk: false,
-                },
-                _id: '',
+      {
+        isAdmin &&
+        <View style={styles.ButtonBox}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => {
+              navigation.navigate('FarmerForm', {
+                mode: 'create',
+                userType: 'customer',
               });
-            setSelectedCustomer({
-              name: '',
-              phoneNumber: '',
-              _id: '',
-              buffaloRate: '',
-              cowRate: '',
-              userCode: '',
-            });
-            setBottomSheetIndex(true);
-          }}
-        >
-          <Text style={styles.text}>Create Customer</Text>
-        </TouchableOpacity>
-      </View>
-  }
+            }}
+          >
+            <Text style={styles.text}>Create Customer</Text>
+          </TouchableOpacity>
+        </View>
+      }
       <Modal
         animationType="fade"
         transparent={true}
         visible={bottomSheetIndex}
-        onRequestClose={() => {}}
+        onRequestClose={() => { }}
         style={{
           flex: 1,
           display: 'flex',
@@ -512,7 +482,7 @@ const Customers = () => {
                   textContainerStyle={{ marginLeft: 4 }}
                   textStyle={{
                     color: '#000',
-                    fontSize: 16,
+                    fontSize: 18,
                     textDecorationLine: 'none',
                   }}
                   isChecked={customer?.buffaloMilk?.activeBuffaloMilk}
@@ -553,7 +523,7 @@ const Customers = () => {
                 textContainerStyle={{ marginLeft: 4 }}
                 textStyle={{
                   color: '#000',
-                  fontSize: 16,
+                  fontSize: 18,
                   textDecorationLine: 'none',
                 }}
                 isChecked={customer?.buffaloMilk?.fixedAmount}
@@ -580,7 +550,7 @@ const Customers = () => {
                 textContainerStyle={{ marginLeft: 4 }}
                 textStyle={{
                   color: '#000',
-                  fontSize: 16,
+                  fontSize: 18,
                   textDecorationLine: 'none',
                 }}
                 isChecked={customer?.buffaloMilk?.fatAmount}
@@ -607,7 +577,7 @@ const Customers = () => {
                 textContainerStyle={{ marginLeft: 4 }}
                 textStyle={{
                   color: '#000',
-                  fontSize: 16,
+                  fontSize: 18,
                   textDecorationLine: 'none',
                 }}
                 isChecked={customer?.buffaloMilk?.snfAmount}
@@ -656,7 +626,7 @@ const Customers = () => {
                   textContainerStyle={{ marginLeft: 4 }}
                   textStyle={{
                     color: '#000',
-                    fontSize: 16,
+                    fontSize: 18,
                     textDecorationLine: 'none',
                   }}
                   isChecked={customer?.cowMilk?.activeCowMilk}
@@ -696,7 +666,7 @@ const Customers = () => {
                 textContainerStyle={{ marginLeft: 4 }}
                 textStyle={{
                   color: '#000',
-                  fontSize: 16,
+                  fontSize: 18,
                   textDecorationLine: 'none',
                 }}
                 isChecked={customer?.cowMilk?.fixedAmount}
@@ -723,7 +693,7 @@ const Customers = () => {
                 textContainerStyle={{ marginLeft: 4 }}
                 textStyle={{
                   color: '#000',
-                  fontSize: 16,
+                  fontSize: 18,
                   textDecorationLine: 'none',
                 }}
                 isChecked={customer?.cowMilk?.fatAmount}
@@ -750,7 +720,7 @@ const Customers = () => {
                 textContainerStyle={{ marginLeft: 4 }}
                 textStyle={{
                   color: '#000',
-                  fontSize: 16,
+                  fontSize: 18,
                   textDecorationLine: 'none',
                 }}
                 isChecked={customer?.cowMilk?.snfAmount}
@@ -910,7 +880,7 @@ const Customers = () => {
                       textContainerStyle={{ marginLeft: 6 }}
                       textStyle={{
                         color: '#000',
-                        fontSize: 16,
+                        fontSize: 18,
                         textDecorationLine: 'none',
                       }}
                       isChecked={customer?.buffaloMilk?.morningTimeMilk}
@@ -935,7 +905,7 @@ const Customers = () => {
                       textContainerStyle={{ marginLeft: 6 }}
                       textStyle={{
                         color: '#000',
-                        fontSize: 16,
+                        fontSize: 18,
                         textDecorationLine: 'none',
                       }}
                       isChecked={customer?.buffaloMilk?.eveningTimeMilk}
@@ -1000,7 +970,7 @@ const Customers = () => {
                       textContainerStyle={{ marginLeft: 6 }}
                       textStyle={{
                         color: '#000',
-                        fontSize: 16,
+                        fontSize: 18,
                         textDecorationLine: 'none',
                       }}
                       isChecked={customer?.cowMilk?.morningTimeMilk}
@@ -1025,7 +995,7 @@ const Customers = () => {
                       textContainerStyle={{ marginLeft: 6 }}
                       textStyle={{
                         color: '#000',
-                        fontSize: 16,
+                        fontSize: 18,
                         textDecorationLine: 'none',
                       }}
                       isChecked={customer?.cowMilk?.eveningTimeMilk}
@@ -1062,7 +1032,7 @@ const Customers = () => {
         animationType="fade"
         transparent={true}
         visible={bottomSheetDeleteIndex}
-        onRequestClose={() => {}}
+        onRequestClose={() => { }}
         style={{
           flex: 1,
           display: 'flex',
@@ -1078,7 +1048,7 @@ const Customers = () => {
             <View>
               <Text
                 style={{
-                  fontSize: 18,
+                  fontSize: 20,
                   color: '#8e8e98ff',
                   textAlign: 'center',
                 }}
@@ -1177,7 +1147,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: '#fff',
   },
@@ -1250,11 +1220,11 @@ const styles = StyleSheet.create({
   },
 
   circle: {
-    width: 20,
-    height: 20,
+    width: 22,
+    height: 22,
     borderWidth: 2,
     borderColor: '#5086E7',
-    borderRadius: 20, // makes it a circle
+    borderRadius: 22, // makes it a circle
     // backgroundColor: '#5086E7',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1263,6 +1233,6 @@ const styles = StyleSheet.create({
   timeText: {
     color: '#5086E7',
     fontWeight: '700',
-    fontSize: 12,
+    fontSize: 14,
   },
 });

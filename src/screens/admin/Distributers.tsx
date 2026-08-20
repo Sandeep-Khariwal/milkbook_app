@@ -198,7 +198,7 @@ const Distributers = () => {
               <View key={distributer._id ?? i} style={styles.cardContainer}>
                 <View style={styles.cardOne}>
                   <Text
-                    style={{ fontSize: 18, fontWeight: 600, color: '#5086E7' }}
+                    style={{ fontSize: 20, fontWeight: 600, color: '#5086E7' }}
                   >
                     {distributer.name}
                   </Text>
@@ -236,7 +236,7 @@ const Distributers = () => {
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ fontSize: 18, color: '#8e8e98ff' }}>
+              <Text style={{ fontSize: 20, color: '#8e8e98ff' }}>
                 No Distributers created yet
               </Text>
             </View>
@@ -367,7 +367,7 @@ const Distributers = () => {
             <View>
               <Text
                 style={{
-                  fontSize: 18,
+                  fontSize: 20,
                   color: '#8e8e98ff',
                   textAlign: 'center',
                 }}
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: '#fff',
   },

@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
   subText: {
-    fontSize: 14,
+    fontSize: 16,
     color: 'rgba(255,255,255,0.8)',
     marginTop: 5,
   },
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     color: '#333',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '500',
   },
   loginButton: {
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: '#FFF',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     letterSpacing: 1,
   },
@@ -263,11 +263,11 @@ const styles = StyleSheet.create({
   },
   footerText: {
     color: '#666',
-    fontSize: 14,
+    fontSize: 16,
   },
   signupLink: {
     color: '#5086E7',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });
