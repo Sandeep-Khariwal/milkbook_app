@@ -29,6 +29,7 @@ import Stocks from '../screens/admin/Stocks';
 import Distributers from '../screens/admin/Distributers';
 import Customers from '../screens/admin/Customers';
 import Farmers from '../screens/admin/Farmer';
+import FarmerForm from '../screens/admin/FarmerForm';
 import DeletedUsers from '../screens/admin/DeletedUsers';
 import SubscriptionPlan from '../screens/admin/SubscriptionPlan';
 import DairyBusinessList from '../screens/admin/DiaryBussinessList';
@@ -39,6 +40,7 @@ import ShowAllHistory from '../screens/commonScreen/AllHistory';
 import { createStackNavigator } from '@react-navigation/stack';
 import ShowSavedBalance from '../screens/commonScreen/ShowSavedBalance';
 import DairySales from "../screens/admin/DairySales";
+import MilkRateChart from '../screens/admin/MilkRateChart';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -125,6 +127,13 @@ function CustomDrawerContent(props: any) {
         <View style={styles.drawerSection}>
           <Text style={styles.sectionTitle}>ACCOUNT & SYSTEM</Text>
           <NavItem label="Subscription Plans" icon="card-outline" route="Plans" />
+
+          <NavItem
+            label="Milk Rate Chart"
+            icon="document-text-outline"
+            route="MilkRateChart"
+          />
+          
           <NavItem label="Archived Users" icon="trash-outline" route="Deletedusers" />
           {(firm.id === 'FIRM-4cb29350-6863-4ad7-bb17-d1f885ba34c7' || firm.id === "FIRM-8bab3f1a-c031-42df-b836-91ed29e6d743") && (
             <NavItem label="Dairy Network" icon="globe-outline" route="business" />
@@ -188,7 +197,7 @@ const AdminDrawer = () => {
       screenOptions={{
         headerShown: true,
         headerStyle: { backgroundColor: '#fff', elevation: 0, shadowOpacity: 0 },
-        headerTitleStyle: { color: '#5086E7', fontWeight: 'bold', fontSize: 18 },
+        headerTitleStyle: { color: '#5086E7', fontWeight: 'bold', fontSize: 20 },
         headerTintColor: '#5086E7',
         headerTitleAlign: 'center',
       }}
@@ -198,6 +207,11 @@ const AdminDrawer = () => {
       <Drawer.Screen name="Distributers" component={Distributers} options={{ title: 'Distributers' }} />
       <Drawer.Screen name="Farmers" component={Farmers} options={{ title: 'Farmers List' }} />
       <Drawer.Screen name="Customers" component={Customers} options={{ title: 'Customers List' }} />
+      <Drawer.Screen
+        name="MilkRateChart"
+        component={MilkRateChart}
+        options={{ title: 'Milk Rate Chart' }}
+      />
       <Drawer.Screen name="Deletedusers" component={DeletedUsers} options={{ title: 'Archived Records' }} />
       <Drawer.Screen name="Plans" component={SubscriptionPlan} options={{ title: 'Subscription' }} />
       <Drawer.Screen name="business" component={DairyBusinessList} options={{ title: 'Network' }} />
@@ -210,6 +224,7 @@ export default function AdminNavigator() {
     <Stack.Navigator id="admin-stack" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="AdminHome" component={AdminDrawer} />
       <Stack.Screen name="FarmerPage" component={FarmerHome} />
+      <Stack.Screen name="FarmerForm" component={FarmerForm} />
       <Stack.Screen name="CustomerPage" component={CustomerHome} />
       <Stack.Screen name="History" component={ShowHistory} />
       <Stack.Screen name="AllHistory" component={ShowAllHistory} />
@@ -247,8 +262,8 @@ const styles = StyleSheet.create({
   },
   avatarText: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
   firmInfo: { marginLeft: 12 },
-  firmName: { color: '#fff', fontSize: 18, fontWeight: 'bold', width: 140 },
-  adminRole: { color: 'rgba(255,255,255,0.7)', fontSize: 12 },
+  firmName: { color: '#fff', fontSize: 20, fontWeight: 'bold', width: 140 },
+  adminRole: { color: 'rgba(255,255,255,0.7)', fontSize: 14 },
   settingsBtn: {
     padding: 8,
     backgroundColor: 'rgba(255,255,255,0.1)',
@@ -256,7 +271,7 @@ const styles = StyleSheet.create({
   },
   drawerSection: { paddingHorizontal: 15, marginTop: 20 },
   sectionTitle: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '800',
     color: '#94a3b8',
     letterSpacing: 1.2,
@@ -280,7 +295,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeIconContainer: { backgroundColor: '#5086E7' },
-  navLabel: { fontSize: 15, color: '#475569', marginLeft: 12, fontWeight: '600' },
+  navLabel: { fontSize: 17, color: '#475569', marginLeft: 12, fontWeight: '600' },
   activeNavLabel: { color: '#1e293b', fontWeight: '700' },
   divider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 10, marginHorizontal: 25 },
 
@@ -291,14 +306,14 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#f1f5f9'
   },
-  versionText: { textAlign: 'center', fontSize: 10, color: '#cbd5e1', marginTop: 10 },
+  versionText: { textAlign: 'center', fontSize: 12, color: '#cbd5e1', marginTop: 10 },
 
   centeredView: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   modalView: { width: '90%', backgroundColor: '#fff', borderRadius: 20, padding: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 5 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#1e293b' },
-  inputLabel: { fontSize: 13, color: '#64748b', marginBottom: 8, fontWeight: '600', marginLeft: 4 },
+  inputLabel: { fontSize: 15, color: '#64748b', marginBottom: 8, fontWeight: '600', marginLeft: 4 },
   modalInput: { backgroundColor: '#f8fafc', borderRadius: 12, padding: 12, marginBottom: 20, borderWidth: 1, borderColor: '#e2e8f0', color: '#1e293b' },
   saveBtn: { backgroundColor: '#5086E7', padding: 15, borderRadius: 12, alignItems: 'center' },
-  saveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  saveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 18 },
 });

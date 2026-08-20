@@ -58,6 +58,7 @@ const CustomerHome = ({ route }: { route: any }) => {
     cowRate: number;
     buffaloRate: number;
     phoneNumber: string;
+    hisabCycleDays?: number;
     cowMilk?: any;
     buffaloMilk?: any;
   }>({
@@ -90,6 +91,7 @@ const CustomerHome = ({ route }: { route: any }) => {
         buffaloRate: user.buffaloRate,
         cowRate: user.cowRate,
         phoneNumber: user.phoneNumber,
+        hisabCycleDays: user?.hisabCycleDays,
         cowMilk: user?.cowMilk,
         buffaloMilk: user?.buffaloMilk,
       });
@@ -386,6 +388,7 @@ const CustomerHome = ({ route }: { route: any }) => {
             isCustomer={isCustomer}
             customer={customer}
             userType={userType}
+            hisabCycleDays={customer.hisabCycleDays}
             findTotalWeight={(wt, bW, cW, bAmt = 0, cAmt = 0) => {
               setTotalWeight(wt);
               setBuffalowTotalWeight(bW);
@@ -527,7 +530,7 @@ const styles = StyleSheet.create({
   },
   firmName: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     letterSpacing: 1,
   },
@@ -545,8 +548,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
   },
-  idBadgeText: { color: '#cbd5e1', fontSize: 12, fontWeight: '600' },
-  phoneText: { color: '#94a3b8', fontSize: 14 },
+  idBadgeText: { color: '#cbd5e1', fontSize: 14, fontWeight: '600' },
+  phoneText: { color: '#94a3b8', fontSize: 16 },
   statsCard: {
     width: '90%',
     backgroundColor: '#fff',
@@ -559,7 +562,7 @@ const styles = StyleSheet.create({
   statsLabel: {
     textAlign: 'center',
     color: '#94a3b8',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '800',
     letterSpacing: 1.2,
   },
@@ -584,7 +587,7 @@ const styles = StyleSheet.create({
   weightBox: { flex: 1, paddingHorizontal: 4 },
   verticalDivider: { width: 1, height: 45, backgroundColor: '#e2e8f0' },
   weightLabel: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#1e293b',
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -598,10 +601,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 3,
   },
-  metaLabel: { fontSize: 11, color: '#64748b', fontWeight: '500' },
-  weightValue: { fontSize: 14, fontWeight: '700', color: '#334155' },
-  amountValue: { fontSize: 14, fontWeight: '700', color: '#10b981' },
-  unit: { fontSize: 11, color: '#64748b', fontWeight: '400' },
+  metaLabel: { fontSize: 13, color: '#64748b', fontWeight: '500' },
+  weightValue: { fontSize: 16, fontWeight: '700', color: '#334155' },
+  amountValue: { fontSize: 16, fontWeight: '700', color: '#10b981' },
+  unit: { fontSize: 13, color: '#64748b', fontWeight: '400' },
   actionRow: {
     flexDirection: 'row',
     paddingHorizontal: 20,
@@ -619,7 +622,7 @@ const styles = StyleSheet.create({
     gap: 8,
     elevation: 4,
   },
-  primaryBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  primaryBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 17 },
   secondaryBtn: {
     flex: 1,
     backgroundColor: '#fff',
@@ -632,7 +635,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#e2e8f0',
   },
-  secondaryBtnText: { color: '#1e293b', fontWeight: 'bold', fontSize: 15 },
+  secondaryBtnText: { color: '#1e293b', fontWeight: 'bold', fontSize: 17 },
   viewBalancesBtn: {
     backgroundColor: '#FFF',
     marginHorizontal: 20,
@@ -647,7 +650,7 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     elevation: 2,
   },
-  viewBalancesBtnText: { color: '#1E293B', fontWeight: 'bold', fontSize: 15 },
+  viewBalancesBtnText: { color: '#1E293B', fontWeight: 'bold', fontSize: 17 },
   saveBalanceBtn: {
     backgroundColor: '#4F46E5',
     marginHorizontal: 20,
@@ -660,7 +663,7 @@ const styles = StyleSheet.create({
     gap: 8,
     elevation: 4,
   },
-  saveBalanceBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  saveBalanceBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 17 },
   entryComponentWrapper: { paddingHorizontal: 10, marginTop: 5 },
   tableContainer: { flex: 1, marginTop: 10 },
   modalOverlay: {
@@ -721,7 +724,7 @@ const styles = StyleSheet.create({
   sheetTitle: { fontSize: 20, fontWeight: 'bold', color: '#1e293b' },
   inputGroup: { marginBottom: 18 },
   inputLabel: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: '#64748b',
     marginBottom: 8,
@@ -732,7 +735,7 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     borderRadius: 12,
     padding: 12,
-    fontSize: 16,
+    fontSize: 18,
     color: '#1e293b',
   },
   datePickerDisplay: {
@@ -745,7 +748,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  dateValueText: { fontSize: 16, color: '#1e293b' },
+  dateValueText: { fontSize: 18, color: '#1e293b' },
   saveBtn: {
     backgroundColor: '#1e293b',
     height: 55,
@@ -755,7 +758,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     elevation: 4,
   },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  saveBtnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   secondaryActionRow: {
     flexDirection: 'row',
     marginHorizontal: 18,
@@ -772,9 +775,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 6,
   },
-  minBtnText: { color: '#475569', fontWeight: '600', fontSize: 13 },
+  minBtnText: { color: '#475569', fontWeight: '600', fontSize: 15 },
   saveBtnActive: { backgroundColor: '#334155' },
-  minBtnTextActive: { color: '#FFF', fontWeight: '600', fontSize: 13 },
+  minBtnTextActive: { color: '#FFF', fontWeight: '600', fontSize: 15 },
   integratedActionRow: {
     flexDirection: 'row',
     marginTop: 20,

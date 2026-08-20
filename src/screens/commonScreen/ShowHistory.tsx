@@ -29,13 +29,42 @@ const ShowHistory = ({ route }: { route: any }) => {
 
   const [stocks, setStocks] = useState<any[]>([]);
   const [selectedStock, setSelectedStock] = useState<string>('all');
+  const [historyType, setHistoryType] = useState<'entries' | 'payments'>(
+    'entries',
+  );
+
+  const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
+  const [selectedPaymentMonth, setSelectedPaymentMonth] =
+    useState(new Date());
+
+  const [paymentFromDate, setPaymentFromDate] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+
+  const [paymentToDate, setPaymentToDate] = useState(() => {
+    const now = new Date();
+    return new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
+  });
+
+  const isFarmer = userType === 'farmer';
   const [stockCountMap, setStockCountMap] = useState<Map<string, number>>(
     new Map(),
   );
 
-  useEffect(() => {
+ useEffect(() => {
+  if (!isFarmer) {
     const getStocks = async () => {
       setIsLoading(true);
+
       await fetch(`${BASE_URL}/firm/stocks/${firm.id}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
@@ -50,8 +79,10 @@ const ShowHistory = ({ route }: { route: any }) => {
           setIsLoading(false);
         });
     };
+
     getStocks();
-  }, []);
+  }
+}, []);
 
   const [allHistory, setAllHistory] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState<any[]>([]);
@@ -82,13 +113,16 @@ const ShowHistory = ({ route }: { route: any }) => {
   useEffect(() => {
     if (firmId) {
       getAllHistory(firmId);
-      setIsLoading(true);
     }
+
     if (customerId) {
-      getUserHistory(customerId);
-      setIsLoading(true);
+      if (isFarmer && historyType === 'payments') {
+        getPaymentHistory(customerId);
+      } else {
+        getUserHistory(customerId);
+      }
     }
-  }, [firmId, customerId]);
+  }, [firmId, customerId, historyType]);
 
   const getAllHistory = async (id: string) => {
     try {
@@ -122,6 +156,79 @@ const ShowHistory = ({ route }: { route: any }) => {
       setStockCountMap(newMap);
     } catch (e) {
       console.log(e);
+    }
+  };
+
+  const getPaymentHistory = async (
+    id: string,
+    from: Date = paymentFromDate,
+    to: Date = paymentToDate,
+  ) => {
+    try {
+      setIsLoading(true);
+
+      const query = new URLSearchParams({
+        fromDate: from.toISOString(),
+        toDate: to.toISOString(),
+      }).toString();
+
+      const res = await fetch(
+        `${BASE_URL}/history/user/payment/${id}?${query}`,
+      );
+
+      const result = await res.json();
+
+      setPaymentHistory(result.history || []);
+    } catch (e) {
+      console.log(e);
+      setPaymentHistory([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const changePaymentMonth = (direction: 'prev' | 'next') => {
+    const currentMonth = new Date();
+
+    const newMonth = new Date(selectedPaymentMonth);
+
+    if (
+      direction === 'next' &&
+      selectedPaymentMonth.getMonth() === currentMonth.getMonth() &&
+      selectedPaymentMonth.getFullYear() === currentMonth.getFullYear()
+    ) {
+      return;
+    }
+
+    if (direction === 'prev') {
+      newMonth.setMonth(newMonth.getMonth() - 1);
+    } else {
+      newMonth.setMonth(newMonth.getMonth() + 1);
+    }
+
+    setSelectedPaymentMonth(newMonth);
+
+    const start = new Date(
+      newMonth.getFullYear(),
+      newMonth.getMonth(),
+      1,
+    );
+
+    const end = new Date(
+      newMonth.getFullYear(),
+      newMonth.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
+
+    setPaymentFromDate(start);
+    setPaymentToDate(end);
+
+    if (customerId) {
+      getPaymentHistory(customerId, start, end);
     }
   };
 
@@ -245,7 +352,135 @@ const ShowHistory = ({ route }: { route: any }) => {
     );
   };
 
+  const renderPaymentItem = ({ item }: any) => {
+    const amount = Math.abs(Number(item.amount || 0));
+
+    return (
+      <View style={styles.paymentCard}>
+        <View style={styles.paymentIcon}>
+          <FeIcon name="arrow-up-right" size={22} color="#EF4444" />
+        </View>
+
+        <View style={styles.paymentContent}>
+          <View style={styles.paymentTopRow}>
+            <View>
+              <Text style={styles.paymentTitle}>Payment</Text>
+
+              <Text style={styles.paymentDate}>
+                {formatDate(new Date(item.date))}
+              </Text>
+            </View>
+
+            <Text style={styles.paymentAmount}>
+              - ₹{amount.toFixed(2)}
+            </Text>
+          </View>
+
+          {item.description ? (
+            <Text style={styles.paymentDescription}>
+              {item.description}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+    );
+  };
+
+
+
+
+
   if (isLoading) return <LoadingOverlay visible={isLoading} />;
+
+  const PaymentHistoryList = () => {
+    const currentMonth = new Date();
+
+    const isCurrentPaymentMonth =
+      selectedPaymentMonth.getMonth() === currentMonth.getMonth() &&
+      selectedPaymentMonth.getFullYear() === currentMonth.getFullYear();
+
+    const monthlyPaymentTotal = paymentHistory.reduce(
+      (total, item) => total + Math.abs(Number(item.amount || 0)),
+      0,
+    );
+
+    return (
+      <View style={{ flex: 1 }}>
+        {/* MONTH SELECTOR */}
+        <View style={styles.paymentMonthCard}>
+          <TouchableOpacity
+            style={styles.paymentMonthBtn}
+            onPress={() => changePaymentMonth('prev')}
+          >
+            <FeIcon name="chevron-left" size={22} color="#fff" />
+          </TouchableOpacity>
+
+          <View style={styles.paymentMonthCenter}>
+            <Text style={styles.paymentMonthText}>
+              {selectedPaymentMonth.toLocaleString('default', {
+                month: 'long',
+              })}
+            </Text>
+
+            <Text style={styles.paymentYearText}>
+              {selectedPaymentMonth.getFullYear()}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            disabled={isCurrentPaymentMonth}
+            style={[
+              styles.paymentMonthBtn,
+              isCurrentPaymentMonth && styles.paymentMonthBtnDisabled,
+            ]}
+            onPress={() => changePaymentMonth('next')}
+          >
+            <FeIcon
+              name="chevron-right"
+              size={22}
+              color={isCurrentPaymentMonth ? '#94A3B8' : '#fff'}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* MONTHLY TOTAL */}
+        <View style={styles.paymentTotalCard}>
+          <View>
+            <Text style={styles.paymentTotalLabel}>Total Paid</Text>
+
+            <Text style={styles.paymentTotalMonth}>
+              {selectedPaymentMonth.toLocaleString('default', {
+                month: 'long',
+              })}{' '}
+              {selectedPaymentMonth.getFullYear()}
+            </Text>
+          </View>
+
+          <Text style={styles.paymentTotalAmount}>
+            ₹{monthlyPaymentTotal.toFixed(2)}
+          </Text>
+        </View>
+
+        {/* PAYMENT LIST */}
+        <FlatList
+          data={paymentHistory}
+          keyExtractor={item => item._id}
+          renderItem={renderPaymentItem}
+          contentContainerStyle={{
+            padding: 16,
+            paddingBottom: 100,
+          }}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                No payments found for this month
+              </Text>
+            </View>
+          }
+        />
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -280,64 +515,108 @@ const ShowHistory = ({ route }: { route: any }) => {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterScroll}
         >
+
           <TouchableOpacity
-            onPress={() => setSelectedStock('all')}
-            style={[styles.chip, selectedStock === 'all' && styles.chipActive]}
+            onPress={() => {
+              setHistoryType('entries');
+              setSelectedStock('all');
+            }}
+            style={[
+              styles.chip,
+              historyType === 'entries' &&
+              selectedStock === 'all' &&
+              styles.chipActive,
+            ]}
           >
             <Text
               style={[
                 styles.chipText,
-                selectedStock === 'all' && styles.chipTextActive,
+                historyType === 'entries' &&
+                selectedStock === 'all' &&
+                styles.chipTextActive,
               ]}
             >
               All Entries
             </Text>
           </TouchableOpacity>
-          {stocks.map(stk => {
-            const isSelected = selectedStock === stk.item;
-            return (
-              <TouchableOpacity
-                key={stk._id}
-                onPress={() => setSelectedStock(stk.item)}
-                style={[styles.chip, isSelected && styles.chipActive]}
+          {isFarmer && (
+            <TouchableOpacity
+              onPress={() => {
+                setHistoryType('payments');
+                setSelectedStock('');
+              }}
+              style={[
+                styles.chip,
+                historyType === 'payments' && styles.chipActive,
+              ]}
+            >
+              <FeIcon
+                name="credit-card"
+                size={16}
+                color={historyType === 'payments' ? '#fff' : '#64748b'}
+              />
+
+              <Text
+                style={[
+                  styles.chipText,
+                  historyType === 'payments' && styles.chipTextActive,
+                  { marginLeft: 6 },
+                ]}
               >
-                <Text
-                  style={[styles.chipText, isSelected && styles.chipTextActive]}
-                >
-                  {stk.item}
-                </Text>
-                <View
-                  style={[
-                    styles.countBadge,
-                    isSelected && styles.countBadgeActive,
-                  ]}
+                Payment History
+              </Text>
+            </TouchableOpacity>
+          )}
+          {historyType === 'entries' &&
+            stocks.map(stk => {
+              const isSelected = selectedStock === stk.item;
+              return (
+                <TouchableOpacity
+                  key={stk._id}
+                  onPress={() => setSelectedStock(stk.item)}
+                  style={[styles.chip, isSelected && styles.chipActive]}
                 >
                   <Text
+                    style={[styles.chipText, isSelected && styles.chipTextActive]}
+                  >
+                    {stk.item}
+                  </Text>
+                  <View
                     style={[
-                      styles.countText,
-                      isSelected && styles.countTextActive,
+                      styles.countBadge,
+                      isSelected && styles.countBadgeActive,
                     ]}
                   >
-                    {stockCountMap.get(stk.item) || 0}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+                    <Text
+                      style={[
+                        styles.countText,
+                        isSelected && styles.countTextActive,
+                      ]}
+                    >
+                      {stockCountMap.get(stk.item) || 0}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
         </ScrollView>
       </View>
 
-      <FlatList
-        data={showHistory}
-        keyExtractor={item => item._id}
-        renderItem={renderItem}
-        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No transactions found</Text>
-          </View>
-        }
-      />
+      {historyType === 'entries' ? (
+        <FlatList
+          data={showHistory}
+          keyExtractor={item => item._id}
+          renderItem={renderItem}
+          contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No transactions found</Text>
+            </View>
+          }
+        />
+      ) : (
+        <PaymentHistoryList />
+      )}
 
       <Modal
         animationType="slide"
@@ -402,6 +681,132 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     elevation: 10,
   },
+  paymentCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    marginBottom: 12,
+    padding: 16,
+    flexDirection: 'row',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+  },
+
+  paymentIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#FEF2F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+
+  paymentContent: {
+    flex: 1,
+  },
+
+  paymentTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  paymentTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+
+  paymentDate: {
+    marginTop: 4,
+    fontSize: 13,
+    color: '#94A3B8',
+  },
+
+  paymentAmount: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#EF4444',
+  },
+
+  paymentDescription: {
+    marginTop: 10,
+    fontSize: 14,
+    color: '#64748B',
+  },
+
+  paymentMonthCard: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    elevation: 3,
+  },
+
+  paymentMonthBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#6366F1',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  paymentMonthBtnDisabled: {
+    backgroundColor: '#E2E8F0',
+  },
+
+  paymentMonthCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+
+  paymentMonthText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1E293B',
+  },
+
+  paymentYearText: {
+    fontSize: 13,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+
+  paymentTotalCard: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 4,
+    backgroundColor: '#EEF2FF',
+    borderRadius: 16,
+    padding: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  paymentTotalLabel: {
+    fontSize: 14,
+    color: '#6366F1',
+    fontWeight: '600',
+  },
+
+  paymentTotalMonth: {
+    marginTop: 3,
+    fontSize: 13,
+    color: '#64748B',
+  },
+
+  paymentTotalAmount: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#EF4444',
+  },
   navRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -420,7 +825,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.8)',
     textAlign: 'center',
     marginTop: 10,
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: '500',
   },
 
@@ -438,7 +843,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   chipActive: { backgroundColor: '#6366f1', borderColor: '#6366f1' },
-  chipText: { fontSize: 13, fontWeight: '600', color: '#64748b' },
+  chipText: { fontSize: 15, fontWeight: '600', color: '#64748b' },
   chipTextActive: { color: '#fff' },
   countBadge: {
     backgroundColor: '#f1f5f9',
@@ -447,7 +852,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   countBadgeActive: { backgroundColor: 'rgba(255,255,255,0.3)' },
-  countText: { fontSize: 10, fontWeight: 'bold', color: '#64748b' },
+  countText: { fontSize: 12, fontWeight: 'bold', color: '#64748b' },
   countTextActive: { color: '#fff' },
 
   card: {
@@ -468,8 +873,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  productName: { fontSize: 16, fontWeight: 'bold', color: '#1e293b' },
-  customerName: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
+  productName: { fontSize: 18, fontWeight: 'bold', color: '#1e293b' },
+  customerName: { fontSize: 14, color: '#94a3b8', marginTop: 2 },
   actionRow: { flexDirection: 'row', gap: 12 },
   iconBtn: { padding: 4 },
   detailsRow: {
@@ -480,13 +885,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   detailLabel: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#94a3b8',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  detailValue: { fontSize: 15, fontWeight: 'bold', color: '#334155' },
-  amountValue: { fontSize: 18, fontWeight: '900' },
+  detailValue: { fontSize: 17, fontWeight: 'bold', color: '#334155' },
+  amountValue: { fontSize: 20, fontWeight: '900' },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -495,11 +900,11 @@ const styles = StyleSheet.create({
   },
   descriptionText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 14,
     color: '#64748b',
     fontStyle: 'italic',
   },
-  dateText: { fontSize: 11, fontWeight: '600', color: '#94a3b8' },
+  dateText: { fontSize: 13, fontWeight: '600', color: '#94a3b8' },
 
   emptyContainer: { alignItems: 'center', marginTop: 50 },
   emptyText: { color: '#94a3b8', fontWeight: '500' },
@@ -524,7 +929,7 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#1e293b' },
   inputGroup: { marginBottom: 20 },
   inputLabel: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: '600',
     color: '#64748b',
     marginBottom: 8,
@@ -534,7 +939,7 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     borderRadius: 12,
     padding: 12,
-    fontSize: 16,
+    fontSize: 18,
     color: '#1e293b',
   },
   saveBtn: {
@@ -544,5 +949,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  saveBtnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
 });

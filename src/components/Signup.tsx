@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   subtitle: {
     color: 'rgba(255,255,255,0.8)',
     marginTop: 5,
-    fontSize: 15,
+    fontSize: 17,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
   },
   label: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: '#444',
     marginBottom: 8,
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 18,
     color: '#333',
   },
   button: {
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: 20,
     letterSpacing: 1,
   },
   footer: {
@@ -292,11 +292,11 @@ const styles = StyleSheet.create({
     marginTop: 25,
   },
   loginText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#666',
   },
   loginLink: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#5086E7',
     fontWeight: 'bold',
   },

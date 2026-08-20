@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   distributerName: {
-    fontSize: 14,
+    fontSize: 16,
     color: 'rgba(255,255,255,0.8)',
     fontWeight: '500',
     marginTop: 2,
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 15,
     textTransform: 'capitalize',
   },
   // Modal Styles
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   modalSubTitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#64748B',
     textAlign: 'center',
     lineHeight: 20,

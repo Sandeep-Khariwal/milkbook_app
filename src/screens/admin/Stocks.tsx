@@ -258,7 +258,7 @@ const Stocks = () => {
                   </Text>
                   <Text
                     style={{
-                      fontSize: 14,
+                      fontSize: 16,
                       color: stock.quantity < 5 ? '#cf3434ff' : '#3b613cff',
                     }}
                   >
@@ -300,7 +300,7 @@ const Stocks = () => {
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ fontSize: 18, color: '#8e8e98ff' }}>
+              <Text style={{ fontSize: 20, color: '#8e8e98ff' }}>
                 No stocks created yet
               </Text>
             </View>
@@ -438,7 +438,7 @@ const Stocks = () => {
             <View>
               <Text
                 style={{
-                  fontSize: 18,
+                  fontSize: 20,
                   color: '#8e8e98ff',
                   textAlign: 'center',
                 }}
@@ -655,7 +655,7 @@ const Stocks = () => {
               >
                 <TouchableOpacity onPress={saleProduct}>
                   <Text
-                    style={{ fontSize: 16, color: '#fff', fontWeight: 700 }}
+                    style={{ fontSize: 18, color: '#fff', fontWeight: 700 }}
                   >
                     Sale
                   </Text>
@@ -735,7 +735,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: '#fff',
   },

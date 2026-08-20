@@ -21,6 +21,7 @@ import { formatDate } from '../../../utility/helperFunctions';
 const EntriesTable = (props: {
   userId: string;
   isCustomer: boolean;
+  hisabCycleDays?: number | string;
   customer: {
     _id: string;
     name: string;
@@ -46,14 +47,64 @@ const EntriesTable = (props: {
   const [openEditModal, setOpenEditModal] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
 
+  const cycleDays = Number(props.hisabCycleDays) || 0;
+  const isMonthlyCycle = !props.hisabCycleDays || cycleDays <= 0;
+
   const [fromDate, setFromDate] = useState<Date>(() => {
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
+
+    if (!props.hisabCycleDays || Number(props.hisabCycleDays) <= 0) {
+      return new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    const days = Number(props.hisabCycleDays);
+    const dayIndex = now.getDate() - 1;
+    const cycleIndex = Math.floor(dayIndex / days);
+
+    return new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1 + cycleIndex * days,
+    );
   });
 
   const [toDate, setToDate] = useState<Date>(() => {
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    if (!props.hisabCycleDays || Number(props.hisabCycleDays) <= 0) {
+      return new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
+    }
+
+    const days = Number(props.hisabCycleDays);
+    const dayIndex = now.getDate() - 1;
+    const cycleIndex = Math.floor(dayIndex / days);
+
+    const startDay = 1 + cycleIndex * days;
+    const endDay = startDay + days - 1;
+
+    const lastDayOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+    ).getDate();
+
+    return new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      Math.min(endDay, lastDayOfMonth),
+      23,
+      59,
+      59,
+      999,
+    );
   });
   const [isBuffalo, setIsBuffalo] = useState<boolean>(true);
   const [date, setDate] = useState<Date>(new Date());
@@ -101,46 +152,68 @@ const EntriesTable = (props: {
   }, [props.userId, fromDate, toDate]);
 
 
-  const currentMonth = new Date();
-
-  const isCurrentMonth =
-    selectedMonth.getMonth() === currentMonth.getMonth() &&
-    selectedMonth.getFullYear() === currentMonth.getFullYear();
+  const isCurrentPeriod = toDate >= new Date();
 
 
   const changeMonth = (direction: 'prev' | 'next') => {
-    if (direction === 'next' && isCurrentMonth) {
+    if (isMonthlyCycle) {
+      const newMonth = new Date(selectedMonth);
+
+      if (direction === 'next' && isCurrentPeriod) {
+        return;
+      }
+
+      if (direction === 'prev') {
+        newMonth.setMonth(newMonth.getMonth() - 1);
+      } else {
+        newMonth.setMonth(newMonth.getMonth() + 1);
+      }
+
+      setSelectedMonth(newMonth);
+
+      const start = new Date(
+        newMonth.getFullYear(),
+        newMonth.getMonth(),
+        1,
+      );
+
+      const end = new Date(
+        newMonth.getFullYear(),
+        newMonth.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
+
+      setFromDate(start);
+      setToDate(end);
+
       return;
     }
 
-    const newMonth = new Date(selectedMonth);
+    // Custom hisab cycle
+    const days = Number(props.hisabCycleDays);
+
+    const newStart = new Date(fromDate);
 
     if (direction === 'prev') {
-      newMonth.setMonth(newMonth.getMonth() - 1);
+      newStart.setDate(newStart.getDate() - days);
     } else {
-      newMonth.setMonth(newMonth.getMonth() + 1);
+      if (isCurrentPeriod) {
+        return;
+      }
+
+      newStart.setDate(newStart.getDate() + days);
     }
 
-    setSelectedMonth(newMonth);
+    const newEnd = new Date(newStart);
+    newEnd.setDate(newStart.getDate() + days - 1);
+    newEnd.setHours(23, 59, 59, 999);
 
-    const start = new Date(
-      newMonth.getFullYear(),
-      newMonth.getMonth(),
-      1,
-    );
-
-    const end = new Date(
-      newMonth.getFullYear(),
-      newMonth.getMonth() + 1,
-      0,
-      23,
-      59,
-      59,
-      999,
-    );
-
-    setFromDate(start);
-    setToDate(end);
+    setFromDate(newStart);
+    setToDate(newEnd);
   };
 
   const getAllEntries = async (id: string) => {
@@ -372,17 +445,17 @@ const EntriesTable = (props: {
           </View>
 
           <TouchableOpacity
-            disabled={isCurrentMonth}
+            disabled={isCurrentPeriod}
             style={[
               styles.monthBtn,
-              isCurrentMonth && styles.monthBtnDisabled,
+              isCurrentPeriod && styles.monthBtnDisabled,
             ]}
             onPress={() => changeMonth('next')}
           >
             <FeIcon
               name="chevron-right"
               size={22}
-              color={isCurrentMonth ? '#94A3B8' : '#FFF'}
+              color={isCurrentPeriod ? '#94A3B8' : '#FFF'}
             />
           </TouchableOpacity>
         </View>
@@ -423,12 +496,23 @@ const EntriesTable = (props: {
       {props.userType === 'farmer' && (
         <View style={styles.monthSummaryCard}>
           <Text style={styles.monthSummaryTitle}>
-            Monthly Entries Total
+            {isMonthlyCycle
+              ? 'Monthly Entries Total'
+              : `${cycleDays} Days Entries Total`}
           </Text>
 
           <Text style={styles.monthSummaryDate}>
-            {fromDate.toLocaleString("default", { month: "long" })}{" "}
-            {fromDate.getFullYear()}
+            {fromDate.toLocaleDateString('en-IN', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            })}{' '}
+            -{' '}
+            {toDate.toLocaleDateString('en-IN', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            })}
           </Text>
 
           <View style={{ marginTop: 12 }}>
@@ -472,7 +556,7 @@ const EntriesTable = (props: {
               }}>
               <Text
                 style={{
-                  fontSize: 17,
+                  fontSize: 19,
                   fontWeight: "700",
                 }}>
                 Remaining
@@ -636,7 +720,7 @@ const styles = StyleSheet.create({
     height: 45,
     gap: 5,
   },
-  filterText: { color: '#475569', fontSize: 13, fontWeight: '500' },
+  filterText: { color: '#475569', fontSize: 15, fontWeight: '500' },
   searchBtn: { backgroundColor: '#5086E7', padding: 10, borderRadius: 10 },
   clearBtn: {
     padding: 10,
@@ -649,7 +733,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   editedText: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#EF4444',
     fontWeight: 'bold',
     marginTop: 2,
@@ -670,13 +754,13 @@ const styles = StyleSheet.create({
   buffaloBorder: { borderLeftColor: '#8B5CF6' },
   cowBorder: { borderLeftColor: '#F59E0B' },
   statSplitHeader: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '700',
     color: '#1E293B',
     marginBottom: 4,
   },
   statSplitSub: {
-    fontSize: 11,
+    fontSize: 13,
     color: '#64748B',
   },
   boldText: {
@@ -695,13 +779,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#fff',
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 15,
   },
   rowStyle: { height: 50, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   rowText: {
     textAlign: 'center',
     color: '#334155',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '500',
   },
   centeredView: {
@@ -726,7 +810,7 @@ const styles = StyleSheet.create({
   },
 
   monthSummaryTitle: {
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: "700",
     color: "#0F172A",
   },
@@ -734,7 +818,7 @@ const styles = StyleSheet.create({
   monthSummaryDate: {
     marginTop: 4,
     color: "#64748B",
-    fontSize: 13,
+    fontSize: 15,
   },
 
   monthSummaryAmountRow: {
@@ -778,12 +862,12 @@ const styles = StyleSheet.create({
   },
   selectedBtn: { borderColor: '#5086E7', backgroundColor: '#EFF6FF' },
   animalIcon: { width: 50, height: 50, resizeMode: 'contain' },
-  animalLabel: { fontSize: 12, marginTop: 5, color: '#64748B' },
+  animalLabel: { fontSize: 14, marginTop: 5, color: '#64748B' },
   selectedLabel: { color: '#5086E7', fontWeight: 'bold' },
   inputRow: { flexDirection: 'row', gap: 15, marginBottom: 15 },
   modalInputBox: { flex: 1 },
   inputLabel: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#64748B',
     marginBottom: 5,
     marginLeft: 4,
@@ -795,7 +879,7 @@ const styles = StyleSheet.create({
     height: 50,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    fontSize: 16,
+    fontSize: 18,
     color: '#1E293B',
   },
   dateSelector: {
@@ -814,7 +898,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
   },
-  saveActionText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  saveActionText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   datePickerBox: {
     backgroundColor: '#fff',
     padding: 20,
@@ -823,7 +907,7 @@ const styles = StyleSheet.create({
   },
   doneBtn: {
     color: '#5086E7',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     marginTop: 15,
   },
@@ -864,7 +948,7 @@ const styles = StyleSheet.create({
   },
 
   monthText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     color: '#0F172A',
   },
